@@ -1,0 +1,22 @@
+{
+  "name": "ta-plugin",
+  "interface": {
+    "displayName": "ta - Teaching Assistant"
+  },
+  "plugins": [
+    {
+      "name": "ta",
+      "displayName": "ta - Teaching Assistant",
+      "description": "Turn lecture PDFs/slides or web research into middle-schooler-friendly HTML study notes (Korean/English), then add supplements, examples, visualizations, MathJax formulas, and quizzes.",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -1,15 +1,15 @@
 ---
 name: math
-description: ta 학습자료 HTML에 수식이 나올 때의 표기(MathJax SVG)와 설명(각 항과 항의 조합이 무슨 뜻인지) 규칙. ta:generator, ta:research, ta:supplement, ta:example, ta:quiz가 수식을 쓰거나 다룰 때 이 파일을 읽고 따른다. 사용자가 /ta:math 를 입력하거나 "수식 SVG로 바꿔줘", "이 식 항별로 풀어줘", "수식이 이상하게 보여"라고 하면 기존 학습자료의 수식을 이 규칙대로 바꾸고 설명을 보강한다.
+description: ta 학습자료 HTML에 수식이 나올 때의 표기(MathJax SVG)와 설명(각 항과 항의 조합이 무슨 뜻인지) 규칙. `generator`, `research`, `supplement`, `example`, `quiz`가 수식을 쓰거나 다룰 때 이 파일을 읽고 따른다. 사용자가 이 스킬을 직접 부르거나(`/ta:math`, `$math`) "수식 SVG로 바꿔줘", "이 식 항별로 풀어줘", "수식이 이상하게 보여"라고 하면 기존 학습자료의 수식을 이 규칙대로 바꾸고 설명을 보강한다.
 argument-hint: [학습자료 경로] [수식 또는 위치]
 ---
 
-> 아래 경로의 `CLAUDE_PLUGIN_ROOT`는 ta 플러그인의 루트 폴더다(이 SKILL.md가 있는 폴더의 두 단계 위). Claude Code 밖에서 치환되지 않은 채 보이면 그 경로로 읽는다.
+> 이 문서의 상대 경로(`../generator/toc.css` 같은 것)는 이 SKILL.md가 있는 폴더 기준이다. 플러그인 루트는 그 두 단계 위다. 셸 명령에서는 절대 경로로 바꿔 쓴다.
 
 # 역할
 수식을 교과서처럼 보이게 넣고, 독자가 식을 **말로 읽을 수 있게** 만든다. 식을 보여 주는 것만으로는 부족하다. 식의 각 조각이 무엇을 세거나 재는지, 조각들이 합쳐지면 무슨 뜻이 되는지를 차례로 쌓아 올려 설명한다.
 
-대상 독자는 `${CLAUDE_PLUGIN_ROOT}/skills/generator/SKILL.md`의 `# 학습자 정보`, 말투는 같은 파일의 `# 말투`를 따른다.
+대상 독자는 `../generator/SKILL.md`의 `# 학습자 정보`, 말투는 같은 파일의 `# 말투`를 따른다.
 
 # 무엇이 수식인가
 - 수식으로 쓴다: 첨자·위첨자가 붙은 기호(λ_p, a_ip, x²), Σ·∏·분수·루트, 부등식·등식 관계, 함수식(f(x), max, min), 벡터·행렬 표기. 문장 속에 혼자 나오는 기호도 포함한다.
@@ -18,7 +18,7 @@ argument-hint: [학습자료 경로] [수식 또는 위치]
 # 표기 규칙
 1. **LaTeX로 쓰고 MathJax SVG로 변환한다.** HTML `<sub>`/`<sup>`, 유니코드 Σ·λ·≤, monospace 정렬로 수식을 흉내 내지 않는다. SVG를 손으로 쓰지 않는다.
    ```bash
-   T="${CLAUDE_PLUGIN_ROOT}/skills/math/tex2svg.js"
+   T="<이 SKILL.md가 있는 폴더의 절대 경로>/tex2svg.js"
    node "$T" '\lambda_p'                                  # 문장 속(inline)
    node "$T" --display '\sum_{p} a_{ip}\,\lambda_p \ge b_i'  # 단독 줄(display)
    printf '%s' '[{"tex":"a_{ip}"},{"tex":"\\sum_p \\lambda_p","display":true}]' | node "$T" --json  # 여러 개
@@ -26,7 +26,7 @@ argument-hint: [학습자료 경로] [수식 또는 위치]
    - 결과는 `<span class="m" data-tex="…" role="img" aria-label="…"><svg>…</svg></span>`. 글자색이 `currentColor`라 라이트/다크 모드를 따라간다.
    - LaTeX에 오류가 있으면 exit 1과 한 줄 오류를 낸다. 고쳐서 다시 돌린다.
    - 여러 개를 JSON으로 넘길 때 셸 `echo`를 쓰지 않는다(zsh가 `\f` 등을 제어문자로 바꾼다). `printf '%s'`나 Python `subprocess`로 넘긴다.
-   - MathJax가 없으면(`node_modules` 없음) `cd "${CLAUDE_PLUGIN_ROOT}" && npm install`(플러그인 루트에 package.json이 있다).
+   - MathJax가 없으면(`node_modules` 없음) `cd "<플러그인 루트: 이 SKILL.md 폴더의 두 단계 위>" && npm install`(거기에 package.json이 있다).
 2. **한국어는 수식 밖에 둔다.** `\text{한글}`은 쓰지 않는다. 라벨·설명은 옆 HTML 칸에 쓴다.
 3. **Σ의 범위는 아래에 단다.** display에서는 기본으로, 표 칸 안에서는 `\displaystyle`를 붙인다. 곱셈 기호가 생략된 곱은 `\,`로 살짝 띄운다(`a_{ip}\,\lambda_p`).
 4. **여러 줄 모형**(목적식 + 제약식들)은 3열 그리드로 쓴다: 라벨 | 수식 | 한 줄 뜻.
@@ -36,7 +36,7 @@ argument-hint: [학습자료 경로] [수식 또는 위치]
    ...
    </div>
    ```
-5. **CSS는 한 번만 넣는다.** 문서에 `/*ta-math:start*/`가 없으면 `${CLAUDE_PLUGIN_ROOT}/skills/math/math.css` 내용을 `</style>` 바로 앞에 넣는다.
+5. **CSS는 한 번만 넣는다.** 문서에 `/*ta-math:start*/`가 없으면 `./math.css` 내용을 `</style>` 바로 앞에 넣는다.
 6. **색으로 항 짝짓기.** 식 안의 항을 `\class{t1}{…}`~`\class{t5}{…}`로 감싸고, 설명 표에서 그 항의 행에 같은 `class="t1"`을 단다. 그러면 식의 항과 표의 행이 같은 색으로 이어진다.
    - 한 식에 최대 5색. 색만으로 구분하지 않는다. 표 첫 칸에 그 부분식 SVG를 함께 둔다.
    - `\class`는 같은 식의 첫 등장(display)에만 쓴다. 문장 속 inline 기호에는 색을 넣지 않는다.
@@ -86,13 +86,13 @@ argument-hint: [학습자료 경로] [수식 또는 위치]
 ## 같은 기호가 다시 나올 때
 - 처음 나온 곳에서만 풀이한다. 이후에는 inline SVG만 쓰고, 멀리 떨어져 있으면 처음 푼 표로 링크한다.
 
-## 퀴즈 (ta:quiz)
+## 퀴즈 (`quiz`)
 - 수식이 문서의 핵심이면 퀴즈 중 최소 1문항은 "이 항(또는 항의 조합)이 무슨 뜻인가"를 묻는다.
 
 # 다른 ta 스킬에서 쓸 때
-- **ta:generator·ta:research**: 본문을 쓸 때 위 표기·설명 규칙을 그대로 쓴다. 출처 표기(`.src`)는 식 블록이나 뜯어보기 표 바로 뒤 문장 끝에 단다.
+- **`generator`·`research`**: 본문을 쓸 때 위 표기·설명 규칙을 그대로 쓴다. 출처 표기(`.src`)는 식 블록이나 뜯어보기 표 바로 뒤 문장 끝에 단다.
 - **supplement**: 보충에서 새 수식을 꺼내지 않는 원칙은 그대로다. 단, 막힌 부분이 수식이면 그 식을 inline·display SVG로 다시 보여 주고 ③~⑤를 **막힌 항 위주로** 쓴다. 숫자 대입(④)을 꼭 넣는다.
-- **example**(ta:example 규칙으로 쓰는 모든 예시): 예시에 식 대입이 들어가면 ④ 형식으로 쓰고, 예시 값을 바꾼 ③ 표를 짧게 붙여도 된다.
+- **example**(`example` 규칙으로 쓰는 모든 예시): 예시에 식 대입이 들어가면 ④ 형식으로 쓰고, 예시 값을 바꾼 ③ 표를 짧게 붙여도 된다.
 - **quiz**: 문항·보기·해설의 수식은 위 표기 규칙(SVG)을 따르되 `\class{tN}` 색은 쓰지 않는다("## 퀴즈" 참고).
 
 # 직접 호출했을 때 (기존 학습자료 수식 고치기)
