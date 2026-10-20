@@ -1,10 +1,10 @@
 # ta — Teaching Assistant skills
 
+**한국어** | [English](README.en.md)
+
 강의 PDF·슬라이드(또는 웹 조사)를 근거로 **중학생도 이해할 수 있는 학습자료 HTML**을 만들고, 거기에 보충 설명·예시·그림·수식·퀴즈를 덧붙이는 스킬 묶음입니다. 한국어·영어 자료 모두 다룹니다.
 
 [Agent Skills](https://agentskills.io) 표준 SKILL.md로 작성되어 있고, 같은 저장소가 **Claude Code 플러그인**과 **Codex 플러그인**으로 동시에 설치됩니다. Gemini CLI, Cursor 등 SKILL.md를 읽는 다른 에이전트에서는 `skills/` 폴더를 그대로 복사해 씁니다.
-
-*English summary at the bottom.*
 
 ## 설치
 
@@ -97,22 +97,3 @@ codex plugin marketplace add .               # Codex에 로컬 마켓플레이�
 ## License
 
 MIT
-
----
-
-## English
-
-`ta` is a set of seven [Agent Skills](https://agentskills.io) that turn lecture PDFs/slides (`generator`) or web research (`research`) into single-file HTML study notes a middle-schooler can follow, in Korean or English. The other skills edit those notes in place: `supplement` adds an explanation right after the sentence you got stuck on, `example` adds a worked example, `viz` adds an inline SVG/CSS diagram, `math` converts formulas to MathJax SVG with term-by-term explanations, and `quiz` builds a self-grading quiz HTML from the notes.
-
-The same repository installs as a **Claude Code plugin** and a **Codex plugin**:
-
-```
-# Claude Code
-/plugin marketplace add KangGwonJae/ta-plugin
-/plugin install ta@ta-plugin
-
-# Codex
-codex plugin marketplace add KangGwonJae/ta-plugin   # then install "ta" from /plugins
-```
-
-For Gemini CLI, Cursor, or any other SKILL.md-aware agent, copy `skills/*` into `~/.agents/skills/`. Optional dependencies: Node.js for `math` (run `npm install` once at the repo root; Claude Code does it automatically on install), Google Chrome for the headless preview step in `math`/`viz`. Output goes to a `학습자료/` folder in the current working directory.
