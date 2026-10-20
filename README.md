@@ -1,6 +1,9 @@
 # ta — Teaching Assistant skills
 
-**한국어** | [English](README.en.md)
+<p align="center">
+  <a href="README.md"><img alt="한국어" src="https://img.shields.io/badge/한국어-현재-2e7d32?style=for-the-badge"></a>
+  <a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/English-switch-555555?style=for-the-badge"></a>
+</p>
 
 강의 PDF·슬라이드(또는 웹 조사)를 근거로 **중학생도 이해할 수 있는 학습자료 HTML**을 만들고, 거기에 보충 설명·예시·그림·수식·퀴즈를 덧붙이는 스킬 묶음입니다. 한국어·영어 자료 모두 다룹니다.
 

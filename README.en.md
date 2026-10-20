@@ -1,6 +1,9 @@
 # ta — Teaching Assistant skills
 
-[한국어](README.md) | **English**
+<p align="center">
+  <a href="README.md"><img alt="한국어" src="https://img.shields.io/badge/한국어-전환-555555?style=for-the-badge"></a>
+  <a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/English-current-2e7d32?style=for-the-badge"></a>
+</p>
 
 A set of skills that turns lecture PDFs/slides (or web research) into **HTML study notes a middle-schooler can follow**, then adds supplementary explanations, examples, diagrams, formulas, and quizzes to them. Works with Korean and English materials.
 
