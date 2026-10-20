@@ -35,16 +35,16 @@ codex plugin marketplace add KangGwonJae/ta-plugin
 강의 자료가 있는 폴더에서 에이전트를 엽니다. Claude Code는 `/ta:스킬이름`, Codex는 `$스킬이름`으로 부릅니다.
 
 1. **학습자료 만들기**
-   `/ta:generator 선형계획법 lecture3.pdf`
-   → `학습자료/lecture3.pdf_학습자료.html`이 만들어지고 브라우저로 열립니다.
+   `/ta:generator 뉴턴 운동 법칙 chapter2.pdf`
+   → `학습자료/chapter2.pdf_학습자료.html`이 만들어지고 브라우저로 열립니다.
 
 2. **읽다가 막히면** 그 문장을 복사해 붙이고 물어봅니다.
-   `"λ는 pattern p로 자르는 롤 수다" 이게 무슨 말이야?`
+   `"질량이 두 배가 되면 같은 힘으로는 가속도가 절반이 된다" 왜 그래?`
    → `supplement`가 그 문장 바로 아래에 접을 수 있는 **보충 설명**을 넣습니다.
    `예시 하나 더` → `example`, `그림으로 보여줘` → `viz`, `이 수식 풀어줘` → `math`.
 
 3. **다 읽으면** `/ta:quiz`
-   → `학습자료/lecture3.pdf_퀴즈.html`. 객관식은 바로 채점되고, 주관식은 모범답안을 보고 스스로 채점합니다.
+   → `학습자료/chapter2.pdf_퀴즈.html`. 객관식은 바로 채점되고, 주관식은 모범답안을 보고 스스로 채점합니다.
 
 자료 파일이 없으면 `/ta:research 주제`가 웹에서 찾아 같은 모양의 학습자료를 만듭니다. 출처는 번호 `[1]`로 달립니다.
 

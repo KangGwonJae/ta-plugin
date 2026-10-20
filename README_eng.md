@@ -63,10 +63,10 @@ Invoke as `/ta:<skill>` in Claude Code and `$<skill>` in Codex. `example`, `viz`
 
 ### Typical flow
 
-1. In the folder with your lecture materials, give `generator` "Linear programming lecture3.pdf" → creates `학습자료/Linear programming_학습자료.html`.
+1. In the folder with your lecture materials, give `generator` "Newton's laws of motion chapter2.pdf" → creates `학습자료/chapter2.pdf_학습자료.html` (`study-notes/chapter2.pdf_notes.html` when `lang` is `en`).
 2. When you get stuck while reading, paste the sentence and ask "What does this mean?" → `supplement` adds an explanation at that spot.
 3. "One more example" → `example`; "Show me as a diagram" → `viz`.
-4. `quiz` → creates `학습자료/Linear programming_퀴즈.html`.
+4. `quiz` → creates `학습자료/chapter2.pdf_퀴즈.html` (`study-notes/chapter2.pdf_quiz.html` in English mode).
 
 The output is a **single HTML file** (images embedded as base64, light/dark mode, a page index on the left, glossary tooltips, per-section read checkboxes with an estimated reading time, print CSS), so you can open or share it as is. All output is saved to a `학습자료/` folder in the current working directory (`study-notes/` when `lang` is `en`; configurable). Materials longer than about 80 pages are split into parts, and a hub `index.html` is built alongside.
 
