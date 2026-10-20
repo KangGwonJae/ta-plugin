@@ -1,4 +1,4 @@
-<!--pageidx:start-->
+<!--pageidx:start v2-->
 <style id="pageidx-style">
 #pgidx{position:fixed;top:16px;left:max(8px,calc(50% - 380px - 136px));width:112px;max-height:calc(100vh - 32px);overflow-y:auto;background:var(--card);border:1px solid var(--line,var(--border,#e3e6ec));border-radius:10px;padding:8px 6px;font-size:.8rem;z-index:9;scrollbar-width:thin}
 #pgidx .pgh{font-weight:700;color:var(--muted);margin:0 0 6px 4px;font-size:.72rem;line-height:1.3}
@@ -28,6 +28,9 @@
 (function(){
   var MAIN=document.getElementById('pageidx-script').getAttribute('data-main');
   var box=document.getElementById('pgidx');
+  var EN=((document.documentElement.lang||'').toLowerCase().indexOf('en')===0);
+  var L=EN?{nav:'Slide pages',head:'Slide<br>page',see:'See source p.'}:{nav:'슬라이드 페이지',head:'슬라이드<br>페이지',see:'원자료 p.'};
+  box.setAttribute('aria-label',L.nav); box.querySelector('.pgh').innerHTML=L.head;
   // 1) 출처(.src)에서 원자료(MAIN)의 페이지 번호 수집
   //    data-noidx가 붙은 h2부터 다음 h2 전까지(기본 용어·원자료 해설·요약 등)와 접히는 블록(details: 기본 용어·보충 설명·추가 예시 등) 안의 출처는 강조 대상에서 뺀다
   var pages={}, cites=[], k=0, skip=false;
@@ -62,7 +65,7 @@
     if(el.querySelector('a'))return;
     for(var i=0;i<el._pages.length;i++){
       var o=document.getElementById('orig-p'+el._pages[i]);
-      if(o){var a=document.createElement('a');a.href='#orig-p'+el._pages[i];a.title='원자료 p.'+el._pages[i]+' 보기';while(el.firstChild)a.appendChild(el.firstChild);el.appendChild(a);el.classList.add('go');break;}
+      if(o){var a=document.createElement('a');a.href='#orig-p'+el._pages[i];a.title=L.see+el._pages[i]+(EN?'':' 보기');while(el.firstChild)a.appendChild(el.firstChild);el.appendChild(a);el.classList.add('go');break;}
     }
   });
   var keys=Object.keys(pages).map(Number).sort(function(a,b){return a-b;});

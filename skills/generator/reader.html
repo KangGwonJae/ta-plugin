@@ -1,0 +1,73 @@
+<!--reader:start v1-->
+<style id="reader-style">
+#rd-bar{display:flex;align-items:center;gap:12px;margin:10px 0 4px;font-size:.82rem;color:var(--muted)}
+#rd-bar .rd-track{flex:1;height:6px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);overflow:hidden}
+#rd-bar .rd-fill{height:100%;width:0;border-radius:999px;background:var(--accent);transition:width .3s}
+#rd-bar .rd-txt{white-space:nowrap}
+#rd-bar .rd-reset{all:unset;cursor:pointer;color:var(--muted);font-size:.75rem;padding:1px 7px;border:1px solid var(--line,var(--border,#e3e6ec));border-radius:999px}
+#rd-bar .rd-reset:hover{color:var(--accent);border-color:var(--accent)}
+#rd-bar .rd-reset:empty{display:none}
+.rd-ck{float:right;display:inline-flex;align-items:center;gap:5px;margin:.25em 0 0 12px;font-size:.74rem;font-weight:500;color:var(--muted);line-height:1;cursor:pointer;user-select:none;border:1px solid var(--line,var(--border,#e3e6ec));border-radius:999px;padding:3px 9px 3px 7px;background:var(--card)}
+.rd-ck input{margin:0;accent-color:var(--accent);width:13px;height:13px;cursor:pointer}
+.rd-ck.on{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 50%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+h2 .rd-ck,h3 .rd-ck{font-family:inherit;letter-spacing:0;text-transform:none}
+summary h2 .rd-ck{margin-top:0}
+.rd-done{opacity:.72}
+</style>
+<script id="reader-script">
+(function(){
+  // 절(h2·h3)마다 읽음 체크박스, 제목 아래 진행 막대 + 예상 읽기 시간, 인쇄 전에 접힌 블록 펼치기
+  var EN=((document.documentElement.lang||'').toLowerCase().indexOf('en')===0);
+  var L=EN?{read:'Read',time:'~{m} min read',left:'{m} min left',done:'Done',prog:'{a}/{b} read',reset:'Reset',ttl:'Mark this section as read'}
+          :{read:'읽음',time:'예상 읽기 시간 {m}분',left:'남은 약 {m}분',done:'다 읽음',prog:'읽음 {a}/{b}',reset:'초기화',ttl:'이 절을 읽음으로 표시'};
+  var main=document.querySelector('main')||document.body, KEY='read:'+location.pathname;
+  function load(){try{return JSON.parse(localStorage.getItem(KEY)||'{}');}catch(e){return {};}}
+  function save(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
+  // 1) 절 나누기: 위쪽 목차·덧붙인 블록·고정 패널 안의 제목은 제외
+  var heads=[].slice.call(main.querySelectorAll('h2,h3')).filter(function(h){return !h.closest('.toc,#gl-panel,details.sup,details.exm,details.fix,#tocidx,#pgidx,nav');});
+  if(!heads.length)return;
+  function unitId(h,i){var t=h.id?h:h.closest('[id]');return t?t.id:'rd-'+i;}
+  function textLen(nodes){var n=0;nodes.forEach(function(el){if(el.nodeType===3){n+=el.textContent.replace(/\s/g,'').length;return;}if(el.nodeType!==1)return;var c=el.cloneNode(true);[].forEach.call(c.querySelectorAll('style,script,svg,.toc'),function(x){x.remove();});n+=c.textContent.replace(/\s/g,'').length;});return n;}
+  function extra(nodes){var k=0;nodes.forEach(function(el){if(el.nodeType!==1)return;k+=el.querySelectorAll('img,.viz').length*0.5+el.querySelectorAll('.m-d').length*0.7;if(el.matches&&el.matches('img,.viz'))k+=0.5;});return k;}
+  function between(a,b){ // a 제목부터 b 제목 전까지의 형제 노드(제목이 details/summary 안이면 그 details 전체)
+    var start=a.closest('summary')?a.closest('details'):a, stop=b?(b.closest('summary')?b.closest('details'):b):null, out=[];
+    for(var n=start;n&&n!==stop;n=n.nextSibling){out.push(n);if(stop&&n.contains(stop))break;}
+    return out;
+  }
+  var units=heads.map(function(h,i){var nodes=between(h,heads[i+1]);var mins=textLen(nodes)/500+extra(nodes);return {h:h,id:unitId(h,i),min:mins};});
+  var total=units.reduce(function(s,u){return s+u.min;},0);
+  // 2) 진행 막대
+  var h1=main.querySelector('h1'), bar=document.createElement('div'); bar.id='rd-bar';
+  bar.innerHTML='<div class="rd-track"><div class="rd-fill"></div></div><span class="rd-txt"></span><button type="button" class="rd-reset"></button>';
+  var anchor=h1?h1.nextElementSibling:main.firstElementChild;
+  while(anchor&&anchor.tagName==='P'&&anchor.textContent.length<200&&!anchor.querySelector('a.term'))anchor=anchor.nextElementSibling; // 원자료·조사일 줄 아래
+  if(anchor)main.insertBefore(bar,anchor);else main.appendChild(bar);
+  var fill=bar.querySelector('.rd-fill'), txt=bar.querySelector('.rd-txt'), reset=bar.querySelector('.rd-reset');
+  function render(){
+    var st=load(), n=0, left=0;
+    units.forEach(function(u){var on=!!st[u.id];u.ck.checked=on;u.lab.classList.toggle('on',on);u.h.classList.toggle('rd-done',on);if(on)n++;else left+=u.min;});
+    fill.style.width=(100*n/units.length)+'%';
+    var t=L.time.replace('{m}',Math.max(1,Math.round(total)));
+    if(n&&n<units.length)t=L.prog.replace('{a}',n).replace('{b}',units.length)+' · '+L.left.replace('{m}',Math.max(1,Math.round(left)));
+    else if(n)t=L.done+' · '+L.prog.replace('{a}',n).replace('{b}',units.length);
+    txt.textContent=t; reset.textContent=n?L.reset:'';
+  }
+  reset.addEventListener('click',function(){save({});render();});
+  // 3) 체크박스
+  units.forEach(function(u){
+    var lab=document.createElement('label'); lab.className='rd-ck'; lab.title=L.ttl;
+    var ck=document.createElement('input'); ck.type='checkbox';
+    lab.appendChild(ck); lab.appendChild(document.createTextNode(L.read));
+    lab.addEventListener('click',function(e){e.stopPropagation();}); // summary 안에서 접히지 않게
+    ck.addEventListener('change',function(){var st=load();if(ck.checked)st[u.id]=1;else delete st[u.id];save(st);render();});
+    u.h.appendChild(lab); u.ck=ck; u.lab=lab;
+  });
+  render();
+  window.addEventListener('storage',function(e){if(e.key===KEY)render();});
+  // 4) 인쇄: 접힌 details를 모두 펼쳤다가 끝나면 되돌린다
+  var closed=[];
+  window.addEventListener('beforeprint',function(){closed=[].filter.call(document.querySelectorAll('details'),function(d){return !d.open;});closed.forEach(function(d){d.open=true;});});
+  window.addEventListener('afterprint',function(){closed.forEach(function(d){d.open=false;});closed=[];});
+})();
+</script>
+<!--reader:end-->

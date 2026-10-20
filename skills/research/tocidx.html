@@ -1,4 +1,4 @@
-<!--tocidx:start-->
+<!--tocidx:start v2-->
 <style id="tocidx-style">
 #tocidx{position:fixed;top:16px;left:max(8px,calc(50% - 380px - 236px));width:212px;max-height:calc(100vh - 32px);overflow-y:auto;background:var(--card);border:1px solid var(--line,var(--border,#e3e6ec));border-radius:10px;padding:10px 8px;font-size:.8rem;z-index:9;scrollbar-width:thin}
 #tocidx .pgh{font-weight:700;color:var(--muted);margin:0 0 6px 6px;font-size:.72rem;letter-spacing:.08em}
@@ -29,10 +29,13 @@
 <script id="tocidx-script">
 (function(){
   var box=document.getElementById('tocidx');
+  var EN=((document.documentElement.lang||'').toLowerCase().indexOf('en')===0);
+  var L=EN?{nav:'Sections',head:'Contents',see:'See source note [{n}]'}:{nav:'절 목차',head:'목차',see:'출처 해설 [{n}] 보기'};
+  box.setAttribute('aria-label',L.nav); box.querySelector('.pgh').textContent=L.head;
   // 1) 본문의 [N] 배지: 출처 해설 블록(id="orig-rN")이 있으면 참고문헌 대신 그 블록으로 보낸다
   document.querySelectorAll('.src a[href^="#ref-"]').forEach(function(a){
     var n=a.getAttribute('href').slice(5);
-    if(document.getElementById('orig-r'+n)){a.href='#orig-r'+n;a.title='출처 해설 ['+n+'] 보기';a.closest('.src').classList.add('go');}
+    if(document.getElementById('orig-r'+n)){a.href='#orig-r'+n;a.title=L.see.replace('{n}',n);a.closest('.src').classList.add('go');}
   });
   // 2) 절 제목(h2·h3)을 모아 왼쪽 목차를 만든다. 문서 위쪽 목차·용어 패널·덧붙인 블록 안의 제목은 뺀다
   var heads=[], links=[], k=0;

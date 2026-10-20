@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Teaching-assistant skills for Claude Code: study notes, supplements, examples, visualizations, formulas, quizzes.",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "plugins": [
     {

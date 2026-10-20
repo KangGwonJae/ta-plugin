@@ -1,0 +1,60 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Length 472 >>
+stream
+BT
+/F1 14 Tf
+1 0 0 1 60 760 Tm (Lecture 3: Linear Regression) Tj
+1 0 0 1 60 736 Tm () Tj
+1 0 0 1 60 712 Tm (A model predicts y from x with y = w*x + b.) Tj
+1 0 0 1 60 688 Tm (w is the weight \(slope\), b is the bias \(intercept\).) Tj
+1 0 0 1 60 664 Tm (Example: w = 2, b = 1. For x = 3 the prediction is 2*3 + 1 = 7.) Tj
+1 0 0 1 60 640 Tm (Loss: the mean squared error between predictions and labels.) Tj
+1 0 0 1 60 616 Tm (MSE = \(1/n\) * sum_i \(y_i - yhat_i\)^2) Tj
+ET
+endstream
+endobj
+3 0 obj
+<< /Length 388 >>
+stream
+BT
+/F1 14 Tf
+1 0 0 1 60 760 Tm (Lecture 3: Gradient Descent) Tj
+1 0 0 1 60 736 Tm () Tj
+1 0 0 1 60 712 Tm (We update w by w <- w - lr * dL/dw.) Tj
+1 0 0 1 60 688 Tm (lr is the learning rate. A small lr is slow; a large lr may diverge.) Tj
+1 0 0 1 60 664 Tm (Example: w = 2, dL/dw = 4, lr = 0.1 gives w = 2 - 0.4 = 1.6.) Tj
+1 0 0 1 60 640 Tm (Repeat until the loss stops decreasing.) Tj
+ET
+endstream
+endobj
+4 0 obj
+<< /Type /Page /Parent 6 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 2 0 R >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 6 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 3 0 R >>
+endobj
+6 0 obj
+<< /Type /Pages /Kids [4 0 R 5 0 R] /Count 2 >>
+endobj
+7 0 obj
+<< /Type /Catalog /Pages 6 0 R >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000079 00000 n 
+0000000602 00000 n 
+0000001041 00000 n 
+0000001167 00000 n 
+0000001293 00000 n 
+0000001356 00000 n 
+trailer
+<< /Size 8 /Root 7 0 R >>
+startxref
+1405
+%%EOF

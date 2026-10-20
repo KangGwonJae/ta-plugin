@@ -1,4 +1,4 @@
-/*ta-math:start*/
+/*ta-math:start v1*/
 :root{--t1:#c0392b;--t2:#1f6fb2;--t3:#2e8b57;--t4:#a0611a;--t5:#7d3c98}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--t1:#ff8a7a;--t2:#7cc0f5;--t3:#7fd6a4;--t4:#f0b46a;--t5:#d1a3f0}}
 :root[data-theme="dark"]{--t1:#ff8a7a;--t2:#7cc0f5;--t3:#7fd6a4;--t4:#f0b46a;--t5:#d1a3f0}

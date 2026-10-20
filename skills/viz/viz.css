@@ -1,4 +1,4 @@
-/*ta-viz:start*/
+/*ta-viz:start v1*/
 :root{--viz-new:#e07b1a;--viz-new-soft:#fdebd7}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--viz-new:#f2a252;--viz-new-soft:#4a3418}}
 :root[data-theme="dark"]{--viz-new:#f2a252;--viz-new-soft:#4a3418}

@@ -1,4 +1,4 @@
-/* toc:start — ta 학습자료 공통 목차. 번호는 CSS가 매긴다(기본 용어 = 0) */
+/* toc:start v2 — ta 학습자료 공통 목차·본문 공통 스타일·인쇄. 번호는 CSS가 매긴다(기본 용어 = 0) */
 .toc{--toc-line:var(--line,var(--border,#e3e6ec));margin:28px 0 36px;padding:22px 26px 18px;background:var(--card);border:1px solid var(--toc-line);border-radius:14px}
 .toc .toc-h{margin:0 0 12px;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .toc ol,.toc ul{list-style:none;margin:0;padding:0}
@@ -35,4 +35,16 @@ sub,sup{font-size:.72em;line-height:0;position:relative;vertical-align:baseline}
 sub{bottom:-.3em}
 sup{top:-.55em}
 h4{margin:1.6em 0 .5em;font-size:1.02rem}
+/* 인쇄: 고정 패널·버튼·체크박스를 숨기고 카드가 쪽 사이에서 잘리지 않게. 접힌 details는 reader.html이 인쇄 전에 펼친다 */
+@media print{
+  #pgidx,#tocidx,#gl-panel,#jumpback,.rd-ck,.gl-tog,#rd-bar{display:none!important}
+  body{padding-left:0!important;background:#fff!important;color:#000!important}
+  main{max-width:none!important;padding:0!important}
+  .toc{break-after:page}
+  .ex,.viz,.tcard,details.sup,details.exm,details.fix,blockquote,table,.eqcalc,table.eqx,[id^="orig-"]{break-inside:avoid}
+  h1,h2,h3,h4{break-after:avoid}
+  a{color:inherit!important;text-decoration:none!important}
+  .src{color:#000!important;background:none!important;border-color:#999!important}
+  details>summary{list-style:none}
+}
 /* toc:end */

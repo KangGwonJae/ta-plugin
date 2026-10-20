@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 .DS_Store
 학습자료/
+evals/results/

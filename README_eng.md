@@ -35,14 +35,16 @@ git clone https://github.com/KangGwonJae/ta-plugin
 cp -r ta-plugin/skills/* ~/.agents/skills/      # Gemini CLI also accepts: gemini skills install ./ta-plugin/skills/<name>
 ```
 
-To use formulas (`math`), run `npm install` once at the plugin root.
+The SKILL.md files look for the shared script at `../../scripts/ta.py`, so copy `scripts/` too (`cp -r ta-plugin/scripts ~/.agents/scripts`). To use formulas (`math`), run `npm install` once at the plugin root.
 
 ### Optional dependencies
 
 | Skill | Requires | Notes |
 |---|---|---|
+| all skills | Python 3.9+ | The shared script `scripts/ta.py` (standard library only) handles text extraction, search, insertion, and shared-fragment injection. |
+| `generator` | poppler (`pdftotext`, `pdftoppm`), Pillow | For reading PDFs and cropping source figures (`ta.py clip`). Without Pillow only the figures are skipped. |
 | `math` | Node.js 18+ | MathJax is installed from the root `package.json`. Claude Code does this automatically on plugin install; elsewhere run `npm install` once at the root. |
-| `math`, `viz` | Google Chrome | Used only in the step that captures the result headlessly for checking. Skipped if absent. |
+| `math`, `viz` | Google Chrome | Used only in the step that captures the result headlessly for checking (`ta.py shot`). Skipped if absent (set `TA_CHROME` to point at a binary). |
 | `research` | Web search and page-reading tools | Uses whatever the agent provides (Claude Code: WebSearch/WebFetch). |
 
 ## Skills
@@ -66,7 +68,41 @@ Invoke as `/ta:<skill>` in Claude Code and `$<skill>` in Codex. `example`, `viz`
 3. "One more example" → `example`; "Show me as a diagram" → `viz`.
 4. `quiz` → creates `학습자료/Linear programming_퀴즈.html`.
 
-The output is a **single HTML file** (images embedded as base64, light/dark mode, a page index on the left, glossary tooltips), so you can open or share it as is. All output is saved to a `학습자료/` folder in the current working directory.
+The output is a **single HTML file** (images embedded as base64, light/dark mode, a page index on the left, glossary tooltips, per-section read checkboxes with an estimated reading time, print CSS), so you can open or share it as is. All output is saved to a `학습자료/` folder in the current working directory (`study-notes/` when `lang` is `en`; configurable). Materials longer than about 80 pages are split into parts, and a hub `index.html` is built alongside.
+
+## Configuration (`.ta.json`)
+
+Put a `.ta.json` in the working directory (where the lecture files live) and every skill reads it. Falls back to `~/.ta.json`, then to defaults.
+
+```json
+{ "level": "middle", "lang": "en", "out_dir": null, "open": true }
+```
+
+| Key | Values | Meaning |
+|---|---|---|
+| `level` | `middle` (default) · `undergrad` · free text | Target reader. `middle` is a middle-schooler with no background; `undergrad` assumes high-school math and basic programming. Free text is used verbatim as the reader definition. |
+| `lang` | `ko` (default) · `en` | Language of the body and UI. With `en` the output folder becomes `study-notes/`, suffixes become `_notes`/`_quiz`, and buttons and labels switch to English. |
+| `out_dir` | folder name or `null` | Output folder. `null` means the language default. |
+| `open` | `true`/`false` | Open the result in a browser after generating. |
+
+`python3 scripts/ta.py config` prints the merged values.
+
+## Shared script `scripts/ta.py`
+
+A deterministic toolbox the skills call instead of writing ad-hoc code (Python 3 standard library; only `clip` needs Pillow).
+
+| Command | What it does |
+|---|---|
+| `config` | Print the merged configuration |
+| `text <html>` | Tag-stripped text with style/script/svg/base64 removed (keeps block ids, source badges, formulas) |
+| `find <html> "<sentence>"` | Locate the smallest block containing the sentence, ignoring whitespace (fuzzy fallback), with raw offsets |
+| `insert` · `wrap` · `backup` | Insert after a block, wrap a span in tags (highlighting), copy to `.backup/` |
+| `fragments <html> [--check]` | Inject or upgrade the shared fragments (toc/viz/math CSS, jump · glossary · pageidx\|tocidx · reader) |
+| `clip <pdf> <page> [--box …]` | Render a page, crop by fractional box, emit a 1200px JPEG data URI |
+| `shot <html> --id …` | Capture one element with the document's CSS in headless Chrome (`--dark`) |
+| `hub` · `stats` · `mathscan` | Folder index.html, character count and reading time, formulas not yet converted to SVG |
+
+Shared fragments carry versions (`<!--jump:start v2-->`, `/*ta-math:start v1*/`). Older study notes upgrade to the latest fragments (read checkboxes, reading time, print CSS) with a single `python3 scripts/ta.py fragments <file>`.
 
 ## Repository layout
 
@@ -77,14 +113,19 @@ plugin.json                    Portable plugin manifest (agent-plugins.org schem
 .claude-plugin/plugin.json     Claude Code manifest
 .claude-plugin/marketplace.json    Claude Code marketplace definition
 package.json                   MathJax dependency (used by skills/math/tex2svg.js)
+scripts/
+  ta.py                        Shared script (table above)
+  tests/test_ta.py             Unit tests
 skills/
-  generator/   SKILL.md + toc.css, jump.html, glossary.html, pageidx.html
+  generator/   SKILL.md + toc.css, jump.html, glossary.html, pageidx.html, reader.html
   research/    SKILL.md + tocidx.html
   supplement/
   example/
   viz/         SKILL.md + viz.css
   math/        SKILL.md + tex2svg.js, math.css
   quiz/
+evals/                         claude plugin eval cases (prompt.md + graders/ + fixtures/)
+docs/superpowers/specs/        Design notes
 ```
 
 Every file reference inside a SKILL.md is a **path relative to that SKILL.md's folder** (for example `../math/math.css`), so it means the same thing in any agent. Where invocation names and tool names differ between agents, the text gives both (`/ta:math` · `$math`, WebSearch · the environment's search tool).
@@ -93,9 +134,14 @@ Every file reference inside a SKILL.md is a **path relative to that SKILL.md's f
 
 ```bash
 claude plugin validate . --strict            # Check Claude Code manifests and skills
+python3 -m unittest discover -s scripts/tests   # Unit tests for the shared script
+claude plugin eval . --scaffold --trust-plugin --allow-tools Bash Write Edit Read Glob Grep Skill --no-publish   # Skill regression evals (runs real models, costs money; --scaffold copies the fixtures)
+claude plugin eval . --case 'math-*' ...     # A single case
 claude --plugin-dir .                        # Load locally in Claude Code
 codex plugin marketplace add .               # Register as a local marketplace in Codex
 ```
+
+Each eval case is `evals/<name>/prompt.md` plus `graders/*.md`, with its input files in `evals/<name>/fixtures/` (exposed to the run through `case.yaml`). Grading is mostly deterministic (skill fired, file created, regex on the produced file) plus one llm rubric.
 
 ## License
 

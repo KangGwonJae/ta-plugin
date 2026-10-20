@@ -1,4 +1,4 @@
-<!--jump:start-->
+<!--jump:start v2-->
 <style id="jump-style">
 #jumpback{position:fixed;right:20px;bottom:20px;z-index:10;display:none;align-items:center;gap:11px;width:max-content;max-width:min(340px,calc(100vw - 40px));padding:8px 16px 8px 8px;border:0;border-radius:14px;background:var(--accent);color:var(--bg);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.22);animation:jb-in .2s ease-out}
 #jumpback.show{display:flex}
@@ -18,6 +18,9 @@
 (function(){
   // 문서 안 링크(#…)로 이동할 때 출발 위치를 쌓아 두고, 버튼으로 하나씩 되돌아간다
   var btn=document.getElementById('jumpback'), stack=[];
+  var EN=((document.documentElement.lang||'').toLowerCase().indexOf('en')===0);
+  var L=EN?{title:'Back to where you were (Backspace)',back:'Back to',top:'top of document'}:{title:'읽던 곳으로 돌아가기 (Backspace)',back:'읽던 곳으로',top:'문서 처음'};
+  btn.title=L.title; btn.querySelector('.jb-lb').textContent=L.back;
   var old=document.getElementById('backbtn'); if(old)old.remove(); // 예전 history.back() 버튼 대체
   function flash(el){el.classList.remove('jump-flash');void el.offsetWidth;el.classList.add('jump-flash');setTimeout(function(){el.classList.remove('jump-flash');},1900);}
   function openTo(el){for(var d=el;d;d=d.parentElement){if(d.tagName==='DETAILS')d.open=true;}}
@@ -34,7 +37,7 @@
   function whereView(){var line=Math.min(window.innerHeight*0.3,160);return headingBefore(function(h){return h.getBoundingClientRect().top<=line;});}
   function render(){
     if(!stack.length){btn.classList.remove('show');return;}
-    btn.querySelector('.jb-to').textContent=stack[stack.length-1].label||'문서 처음';
+    btn.querySelector('.jb-to').textContent=stack[stack.length-1].label||L.top;
     btn.querySelector('.jb-n').textContent=stack.length>1?stack.length:'';
     btn.classList.add('show');
   }

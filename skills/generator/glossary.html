@@ -1,4 +1,4 @@
-<!--glossary:start-->
+<!--glossary:start v2-->
 <style id="glossary-style">
 details.gloss{margin:8px 0 28px}
 details.gloss:target{animation:none!important;background:none!important;box-shadow:none!important;outline:none!important}
@@ -8,6 +8,8 @@ details.gloss>summary h2{margin:0;flex:1}
 details.gloss>summary .gl-tog{flex:none;font-size:.78rem;color:var(--muted);border:1px solid var(--line,var(--border,#e3e6ec));border-radius:999px;padding:2px 10px}
 details.gloss>summary .gl-tog::after{content:"접기 ▲"}
 details.gloss:not([open])>summary .gl-tog::after{content:"펼치기 ▼"}
+details.gloss:lang(en)>summary .gl-tog::after{content:"Collapse ▲"}
+details.gloss:not([open]):lang(en)>summary .gl-tog::after{content:"Expand ▼"}
 .gl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:14px}
 .tcard{background:var(--card);border:1px solid var(--line,var(--border,#e3e6ec));border-radius:12px;padding:14px 16px 12px;scroll-margin-top:90px;transition:box-shadow .2s,border-color .2s}
 .tcard .tc-top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}
@@ -35,6 +37,8 @@ a.term:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,t
 <script id="glossary-script">
 (function(){
   var gl=document.querySelector('details.gloss'); if(!gl)return;
+  var EN=((document.documentElement.lang||'').toLowerCase().indexOf('en')===0);
+  var L=EN?{panel:'Term cards',terms:'Terms',closeAll:'Close all',close:'Close'}:{panel:'용어 카드',terms:'용어',closeAll:'모두 닫기',close:'닫기'};
   var KEY='gloss-open:'+location.pathname;
   try{var v=localStorage.getItem(KEY); if(v!==null)gl.open=v==='1';}catch(e){}
   gl.addEventListener('toggle',function(){try{localStorage.setItem(KEY,gl.open?'1':'0');}catch(e){}});
@@ -45,9 +49,10 @@ a.term:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,t
     for(var d=document.getElementById(a.getAttribute('href').slice(1));d;d=d.parentElement){if(d.tagName==='DETAILS')d.open=true;}
   });
   // 본문 용어 → 오른쪽 패널에 카드 띄우기(이동하지 않음). 최근 것이 맨 위, 최대 4장
-  var panel=document.createElement('aside'); panel.id='gl-panel'; panel.setAttribute('aria-label','용어 카드');
+  var panel=document.createElement('aside'); panel.id='gl-panel'; panel.setAttribute('aria-label',L.panel);
   document.body.appendChild(panel);
-  var head=document.createElement('div'); head.className='gp-h'; head.innerHTML='<span>용어</span><button type="button">모두 닫기</button>';
+  var head=document.createElement('div'); head.className='gp-h'; head.innerHTML='<span></span><button type="button"></button>';
+  head.querySelector('span').textContent=L.terms; head.querySelector('button').textContent=L.closeAll;
   head.querySelector('button').addEventListener('click',function(){panel.innerHTML='';mark();});
   function mark(){
     var on={}; panel.querySelectorAll('.tcard').forEach(function(c){on[c.dataset.term]=1;});
@@ -58,7 +63,7 @@ a.term:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,t
     var c=panel.querySelector('.tcard[data-term="'+id+'"]');
     if(!c){
       c=src.cloneNode(true); c.removeAttribute('id'); c.dataset.term=id;
-      var x=document.createElement('button'); x.type='button'; x.className='tc-x'; x.textContent='×'; x.title='닫기';
+      var x=document.createElement('button'); x.type='button'; x.className='tc-x'; x.textContent='×'; x.title=L.close;
       x.addEventListener('click',function(){c.remove(); if(!panel.querySelector('.tcard'))panel.innerHTML=''; mark();});
       c.appendChild(x);
     }
