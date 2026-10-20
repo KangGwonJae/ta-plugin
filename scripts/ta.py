@@ -27,6 +27,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import unicodedata
 from datetime import datetime
 from html.parser import HTMLParser
 from pathlib import Path
@@ -714,7 +715,8 @@ def latest_notes(out_dir, suffix):
     d = Path(out_dir)
     if not d.is_dir():
         return None
-    files = sorted(d.glob(f"*{suffix}*.html"), key=lambda f: f.stat().st_mtime, reverse=True)
+    files = sorted((f for f in d.glob("*.html") if suffix in unicodedata.normalize("NFC", f.name)),
+                   key=lambda f: f.stat().st_mtime, reverse=True)
     return files[0] if files else None
 
 
@@ -902,10 +904,11 @@ def do_hub(out_dir, lang=None):
     notes = []
     suffixes = [NAMES["ko"]["notes"], NAMES["en"]["notes"]]
     qsuf = [NAMES["ko"]["quiz"], NAMES["en"]["quiz"]]
+    names_nfc = {unicodedata.normalize("NFC", f.name): f.name for f in d.glob("*.html")}
     for f in sorted(d.glob("*.html")):
         if f.name == "index.html":
             continue
-        name = f.stem
+        name = unicodedata.normalize("NFC", f.stem)  # macOS 파일명은 NFD일 수 있다
         suf = next((s for s in suffixes if s in name), None)
         if not suf:
             continue
@@ -917,9 +920,9 @@ def do_hub(out_dir, lang=None):
         st = do_stats(f)
         quiz = None
         for qs in qsuf:
-            for cand in (d / f"{stem}{('_' + part) if part else ''}{qs}.html", d / f"{stem}{qs}.html"):
-                if cand.exists():
-                    quiz = cand.name
+            for cand in (f"{stem}{('_' + part) if part else ''}{qs}.html", f"{stem}{qs}.html"):
+                if cand in names_nfc:
+                    quiz = names_nfc[cand]
                     break
             if quiz:
                 break

@@ -187,6 +187,18 @@ class HubStatsTests(unittest.TestCase):
             self.assertIn("2부", html)
             self.assertIn("Part 2", html)
 
+    def test_hub_nfd_filenames(self):
+        import unicodedata
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d, "학습자료")
+            out.mkdir()
+            nfd = unicodedata.normalize("NFD", "주제_학습자료.html")
+            (out / nfd).write_text(DOC, encoding="utf-8")
+            (out / unicodedata.normalize("NFD", "주제_퀴즈.html")).write_text("<html></html>", encoding="utf-8")
+            idx, notes = ta.do_hub(out)
+            self.assertEqual(len(notes), 1)
+            self.assertIsNotNone(notes[0]["quiz"])
+
 
 class MathScanTests(unittest.TestCase):
     def test_scan(self):
