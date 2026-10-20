@@ -569,7 +569,7 @@ def shipped_version(text, name, css=False):
 
 
 def doc_kind(raw):
-    if '<ol id="refs"' in raw or "<!--tocidx:start" in raw:
+    if re.search(r'\bid="refs"', raw) or re.search(r'\bid="ref-\d+"', raw) or "<!--tocidx:start" in raw:
         return "research"
     return "generator"
 
