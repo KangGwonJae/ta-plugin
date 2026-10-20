@@ -1,0 +1,30 @@
+{
+  "name": "ta-plugin",
+  "owner": {
+    "name": "KangGwonJae",
+    "email": "antter5@gmail.com"
+  },
+  "metadata": {
+    "description": "Teaching-assistant skills for Claude Code: study notes, supplements, examples, visualizations, formulas, quizzes.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "ta",
+      "source": "./",
+      "description": "Turn lecture PDFs/slides or web research into middle-schooler-friendly HTML study notes (Korean/English), then add supplements, examples, visualizations, MathJax formulas, and quizzes.",
+      "author": {
+        "name": "KangGwonJae"
+      },
+      "keywords": [
+        "education",
+        "study-notes",
+        "teaching-assistant",
+        "quiz",
+        "mathjax",
+        "korean"
+      ],
+      "category": "productivity"
+    }
+  ]
+}

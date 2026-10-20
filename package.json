@@ -1,0 +1,11 @@
+{
+  "name": "ta-plugin",
+  "version": "1.0.0",
+  "description": "Node dependencies for the ta plugin (MathJax for skills/math/tex2svg.js)",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "mathjax-full": "^3.2.2"
+  },
+  "private": true
+}

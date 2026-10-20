@@ -1,0 +1,79 @@
+<!--tocidx:start-->
+<style id="tocidx-style">
+#tocidx{position:fixed;top:16px;left:max(8px,calc(50% - 380px - 236px));width:212px;max-height:calc(100vh - 32px);overflow-y:auto;background:var(--card);border:1px solid var(--line,var(--border,#e3e6ec));border-radius:10px;padding:10px 8px;font-size:.8rem;z-index:9;scrollbar-width:thin}
+#tocidx .pgh{font-weight:700;color:var(--muted);margin:0 0 6px 6px;font-size:.72rem;letter-spacing:.08em}
+#tocidx a{display:block;padding:3px 8px;border-radius:6px;text-decoration:none;color:var(--fg);line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tocidx a.h2{font-weight:700;margin-top:6px}
+#tocidx a.h2:first-of-type{margin-top:0}
+#tocidx a.h3{padding-left:18px;color:color-mix(in srgb,var(--fg) 78%,var(--muted));font-size:.95em}
+#tocidx a:hover{background:var(--soft,color-mix(in srgb,var(--accent) 9%,transparent))}
+#tocidx a.on{background:var(--accent);color:var(--bg);font-weight:700}
+.src a{color:inherit;text-decoration:none}
+.src.go{cursor:pointer;border-color:color-mix(in srgb,var(--accent) 55%,transparent);background:color-mix(in srgb,var(--accent) 18%,transparent)}
+.src.go:hover{background:var(--accent);color:var(--bg)}
+.src.go a::after{content:"↗";font-size:.8em;margin-left:.3em;opacity:.85}
+.src{display:inline-block;font-size:.82em;font-weight:600;line-height:1.25;color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);border-radius:999px;padding:0 .55em;margin:0 .15em;vertical-align:.05em;white-space:nowrap}
+@media (max-width:1260px){
+  body{padding-left:200px}
+  #tocidx{left:8px;width:180px}
+}
+@media (max-width:860px){
+  .src{white-space:normal;overflow-wrap:anywhere}
+}
+@media (max-width:640px){
+  body{padding-left:0}
+  #tocidx{display:none}
+}
+</style>
+<nav id="tocidx" aria-label="절 목차"><p class="pgh">목차</p></nav>
+<script id="tocidx-script">
+(function(){
+  var box=document.getElementById('tocidx');
+  // 1) 본문의 [N] 배지: 출처 해설 블록(id="orig-rN")이 있으면 참고문헌 대신 그 블록으로 보낸다
+  document.querySelectorAll('.src a[href^="#ref-"]').forEach(function(a){
+    var n=a.getAttribute('href').slice(5);
+    if(document.getElementById('orig-r'+n)){a.href='#orig-r'+n;a.title='출처 해설 ['+n+'] 보기';a.closest('.src').classList.add('go');}
+  });
+  // 2) 절 제목(h2·h3)을 모아 왼쪽 목차를 만든다. 문서 위쪽 목차·용어 패널·덧붙인 블록 안의 제목은 뺀다
+  var heads=[], links=[], k=0;
+  document.querySelectorAll('h2, h3').forEach(function(h){
+    if(h.closest('.toc, #gl-panel, details.sup, details.exm, #tocidx'))return;
+    var tgt=h.id?h:h.closest('[id]'); // summary 안 h2처럼 id가 없으면 id 있는 조상(details#s1)으로
+    if(!tgt){h.id='sec-'+(++k);tgt=h;}
+    var a=document.createElement('a');
+    a.href='#'+tgt.id; a.className=h.tagName.toLowerCase();
+    a.textContent=h.textContent.trim(); a.title=a.textContent;
+    box.appendChild(a); heads.push(h); links.push(a);
+  });
+  if(!heads.length){box.remove();return;}
+  // 3) scrollspy: 화면 위쪽 기준선을 마지막으로 지난 제목 하나를 강조
+  var cur=-1, lock=null;
+  function setActive(i){
+    if(i===cur)return; cur=i;
+    links.forEach(function(a,j){a.classList.toggle('on',j===i);});
+    if(i>=0){var a=links[i];box.scrollTo({top:a.offsetTop-box.clientHeight/2+a.offsetHeight/2,behavior:'smooth'});}
+  }
+  links.forEach(function(a,i){a.addEventListener('click',function(){lock=true;setActive(i);});});
+  function spy(){
+    ticking=false;
+    if(lock)return;
+    var line=Math.min(window.innerHeight*0.3,160), best=-1, bestTop=-Infinity;
+    heads.forEach(function(h,i){
+      if(!h.offsetParent&&h.closest('details:not([open])'))return;
+      var t=h.getBoundingClientRect().top;
+      if(t<=line&&t>bestTop){bestTop=t;best=i;}
+    });
+    setActive(best);
+  }
+  var ticking=false;
+  function req(){if(!ticking){ticking=true;setTimeout(spy,60);}}
+  ['wheel','touchmove','keydown'].forEach(function(ev){
+    window.addEventListener(ev,function(e){if(lock&&!(e.target.closest&&e.target.closest('#tocidx'))){lock=null;req();}},{passive:true});
+  });
+  window.addEventListener('scroll',req,{passive:true});
+  window.addEventListener('resize',req);
+  document.addEventListener('toggle',req,true);
+  spy();
+})();
+</script>
+<!--tocidx:end-->

@@ -1,0 +1,79 @@
+<!--glossary:start-->
+<style id="glossary-style">
+details.gloss{margin:8px 0 28px}
+details.gloss:target{animation:none!important;background:none!important;box-shadow:none!important;outline:none!important}
+details.gloss>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px}
+details.gloss>summary::-webkit-details-marker{display:none}
+details.gloss>summary h2{margin:0;flex:1}
+details.gloss>summary .gl-tog{flex:none;font-size:.78rem;color:var(--muted);border:1px solid var(--line,var(--border,#e3e6ec));border-radius:999px;padding:2px 10px}
+details.gloss>summary .gl-tog::after{content:"접기 ▲"}
+details.gloss:not([open])>summary .gl-tog::after{content:"펼치기 ▼"}
+.gl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:14px}
+.tcard{background:var(--card);border:1px solid var(--line,var(--border,#e3e6ec));border-radius:12px;padding:14px 16px 12px;scroll-margin-top:90px;transition:box-shadow .2s,border-color .2s}
+.tcard .tc-top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.tcard .tc-name{all:unset;font-weight:750;font-size:1.06rem;color:var(--accent);cursor:default}
+.tcard .tc-ko{font-size:.82rem;color:var(--muted)}
+.tcard .tc-def{margin:0 0 8px;line-height:1.55}
+.tcard .tc-ex{margin:0;font-size:.86rem;line-height:1.5;color:color-mix(in srgb,var(--fg) 80%,var(--muted));background:color-mix(in srgb,var(--accent) 6%,transparent);border-radius:8px;padding:6px 9px}
+.tcard .tc-ex b{color:var(--muted);font-weight:700;margin-right:6px}
+.tcard.flash{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+a.term{color:inherit;text-decoration:underline dotted color-mix(in srgb,var(--accent) 70%,transparent);text-decoration-thickness:1.5px;text-underline-offset:3px;border-radius:4px;cursor:pointer}
+a.term.on{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+/* 오른쪽 용어 패널(데스크톱 전용): 본문 오른쪽 여백에 고정 */
+#gl-panel{position:fixed;top:16px;left:calc(50% + 380px + 28px);right:auto;width:290px;max-height:calc(100vh - 96px);overflow-y:auto;z-index:9;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin}
+@media (max-width:1400px){#gl-panel{left:auto;right:12px;width:270px}}
+#gl-panel:empty{display:none}
+#gl-panel .gp-h{display:flex;align-items:center;justify-content:space-between;font-size:.72rem;font-weight:700;letter-spacing:.12em;color:var(--muted);padding:0 4px}
+#gl-panel .gp-h button,#gl-panel .tc-x{all:unset;cursor:pointer;color:var(--muted);font-size:.78rem;letter-spacing:0;padding:2px 6px;border-radius:6px}
+#gl-panel .gp-h button:hover,#gl-panel .tc-x:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+#gl-panel .tcard{position:relative;box-shadow:0 6px 20px rgba(0,0,0,.08);animation:gp-in .2s ease-out}
+#gl-panel .tc-x{position:absolute;top:8px;right:8px;font-size:1rem;line-height:1}
+#gl-panel .tc-name{cursor:default}
+@keyframes gp-in{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+a.term:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+</style>
+<script id="glossary-script">
+(function(){
+  var gl=document.querySelector('details.gloss'); if(!gl)return;
+  var KEY='gloss-open:'+location.pathname;
+  try{var v=localStorage.getItem(KEY); if(v!==null)gl.open=v==='1';}catch(e){}
+  gl.addEventListener('toggle',function(){try{localStorage.setItem(KEY,gl.open?'1':'0');}catch(e){}});
+  function flash(el){el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash');setTimeout(function(){el.classList.remove('flash');},1400);}
+  // 목차 등에서 접힌 용어 섹션으로 가는 링크를 누르면 펼친다
+  document.addEventListener('click',function(e){
+    var a=e.target.closest&&e.target.closest('a[href^="#"]'); if(!a||a.classList.contains('term'))return;
+    for(var d=document.getElementById(a.getAttribute('href').slice(1));d;d=d.parentElement){if(d.tagName==='DETAILS')d.open=true;}
+  });
+  // 본문 용어 → 오른쪽 패널에 카드 띄우기(이동하지 않음). 최근 것이 맨 위, 최대 4장
+  var panel=document.createElement('aside'); panel.id='gl-panel'; panel.setAttribute('aria-label','용어 카드');
+  document.body.appendChild(panel);
+  var head=document.createElement('div'); head.className='gp-h'; head.innerHTML='<span>용어</span><button type="button">모두 닫기</button>';
+  head.querySelector('button').addEventListener('click',function(){panel.innerHTML='';mark();});
+  function mark(){
+    var on={}; panel.querySelectorAll('.tcard').forEach(function(c){on[c.dataset.term]=1;});
+    document.querySelectorAll('a.term').forEach(function(a){a.classList.toggle('on',!!on[a.getAttribute('href').slice(1)]);});
+  }
+  function show(id){
+    var src=document.getElementById(id); if(!src)return;
+    var c=panel.querySelector('.tcard[data-term="'+id+'"]');
+    if(!c){
+      c=src.cloneNode(true); c.removeAttribute('id'); c.dataset.term=id;
+      var x=document.createElement('button'); x.type='button'; x.className='tc-x'; x.textContent='×'; x.title='닫기';
+      x.addEventListener('click',function(){c.remove(); if(!panel.querySelector('.tcard'))panel.innerHTML=''; mark();});
+      c.appendChild(x);
+    }
+    if(!panel.firstChild)panel.appendChild(head);
+    panel.insertBefore(c,head.nextSibling);
+    var cs=panel.querySelectorAll('.tcard'); for(var i=4;i<cs.length;i++)cs[i].remove();
+    panel.scrollTop=0; flash(c); mark();
+  }
+  document.querySelectorAll('a.term').forEach(function(a){
+    a.addEventListener('click',function(e){
+      e.preventDefault(); e.stopPropagation(); // 이동·↩ 돌아가기 없이 패널만 연다
+      show(a.getAttribute('href').slice(1));
+    });
+  });
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&panel.firstChild){panel.innerHTML='';mark();}});
+})();
+</script>
+<!--glossary:end-->
