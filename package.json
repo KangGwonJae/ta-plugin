@@ -1,11 +1,14 @@
 {
   "name": "ta-plugin",
   "version": "1.1.0",
-  "description": "Node dependencies for the ta plugin (MathJax for skills/math/tex2svg.js)",
+  "description": "Node dependencies for the ta plugin (MathJax for skills/math/tex2svg.js; three.js + esbuild only to rebuild skills/viz/v3d.html)",
   "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "mathjax-full": "^3.2.2"
   },
-  "private": true
+  "private": true,
+  "scripts": {
+    "build:v3d": "npm install --no-save three@0.186.1 esbuild@0.25.10 && node skills/viz/3d/build.mjs"
+  }
 }

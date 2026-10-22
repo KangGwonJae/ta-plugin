@@ -545,6 +545,7 @@ FRAG_CSS = [  # (이름, 파일, 시작 마커 정규식, 끝 마커)
     ("toc", SKILLS / "generator" / "toc.css", r"/\*\s*toc:start(?:\s+v(\d+))?[^*]*\*/", "/* toc:end */"),
     ("viz", SKILLS / "viz" / "viz.css", r"/\*ta-viz:start(?:\s+v(\d+))?\*/", "/*ta-viz:end*/"),
     ("math", SKILLS / "math" / "math.css", r"/\*ta-math:start(?:\s+v(\d+))?\*/", "/*ta-math:end*/"),
+    ("v3d", SKILLS / "viz" / "v3d.css", r"/\*ta-v3d:start(?:\s+v(\d+))?\*/", "/*ta-v3d:end*/"),
 ]
 FRAG_HTML = [  # 순서대로 </body> 앞에 들어간다
     ("jump", SKILLS / "generator" / "jump.html"),
@@ -552,7 +553,9 @@ FRAG_HTML = [  # 순서대로 </body> 앞에 들어간다
     ("pageidx", SKILLS / "generator" / "pageidx.html"),
     ("tocidx", SKILLS / "research" / "tocidx.html"),
     ("reader", SKILLS / "generator" / "reader.html"),
+    ("v3d", SKILLS / "viz" / "v3d.html"),  # three.js + 3D 런타임. 3D 시각화가 있을 때만
 ]
+V3D_RE = re.compile(r'class="v3d["\s]')
 
 
 def html_marker_re(name):
@@ -585,7 +588,8 @@ def guess_main(raw):
 
 def fragments_status(raw):
     kind = doc_kind(raw)
-    want = {"toc": True, "viz": 'class="viz' in raw or "class='viz" in raw, "math": bool(re.search(r'class="m(?: m-d)?"', raw))}
+    want = {"toc": True, "viz": 'class="viz' in raw or "class='viz" in raw, "math": bool(re.search(r'class="m(?: m-d)?"', raw)),
+            "v3d": bool(V3D_RE.search(raw))}
     rows = []
     for name, f, pat, _end in FRAG_CSS:
         ship = f.read_text(encoding="utf-8")
@@ -596,6 +600,8 @@ def fragments_status(raw):
                      "status": _status(want[name], have, sv)})
     for name, f in FRAG_HTML:
         needed = not ((name == "pageidx" and kind == "research") or (name == "tocidx" and kind == "generator"))
+        if name == "v3d":
+            needed = want["v3d"]
         ship = f.read_text(encoding="utf-8")
         m = re.search(rf"<!--{name}:start(?:\s+v(\d+))?-->", raw)
         have = int(m.group(1) or 0) if m else None
@@ -618,7 +624,7 @@ def apply_fragments(raw, main=None, force=False):
     changed = []
     # CSS: 기존 블록 제거 후 첫 </style> 앞에 넣는다
     css_add = []
-    for (name, f, pat, end), row in zip(FRAG_CSS, rows[:3]):
+    for (name, f, pat, end), row in zip(FRAG_CSS, rows[:len(FRAG_CSS)]):
         m = re.search(pat, raw)
         if m:
             e = raw.find(end, m.end())
@@ -643,7 +649,7 @@ def apply_fragments(raw, main=None, force=False):
         else:
             raw = raw[:i] + "\n" + "\n".join(css_add) + "\n" + raw[i:]
     # HTML 조각: 모두 떼어낸 뒤 정해진 순서로 </body> 앞에 다시 넣는다
-    html_rows = {r["fragment"][:-5]: r for r in rows[3:]}
+    html_rows = {r["fragment"][:-5]: r for r in rows[len(FRAG_CSS):]}
     existing_main = guess_main(raw)
     need_rebuild = force or any(r["status"] in ("missing", "outdated", "extra") for r in html_rows.values())
     if need_rebuild:
@@ -818,12 +824,24 @@ def do_shot(args):
         if not n:
             die(f"id={args.id} 요소가 없습니다")
         body = raw[n.start:n.end]
+    extra, flags, query = "", [], ""
+    if V3D_RE.search(body):
+        # 3D 시각화: 런타임과 장면 정의 스크립트를 함께 넣고, 소프트웨어 WebGL로 그린 뒤 찍는다
+        m = html_marker_re("v3d").search(raw)
+        frag = m.group(0) if m else (SKILLS / "viz" / "v3d.html").read_text(encoding="utf-8")
+        specs = [raw[x.open_end:x.close_start()] for x in p.all
+                 if x.tag == "script" and x.end is not None and "TA3D_Q" in raw[x.open_end:x.close_start()]
+                 and "function mount(" not in raw[x.open_end:x.close_start()]]
+        extra = "".join(f"<script>{t}</script>" for t in specs) + frag
+        flags = ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--virtual-time-budget=6000"]
+        if args.id and args.step is not None:
+            query = f"?ta3d={args.id}:{args.step}"
     lang = re.search(r"<html[^>]*\blang=\"([^\"]+)\"", raw)
     theme = ' data-theme="dark"' if args.dark else ""
     doc = (f'<!doctype html><html lang="{lang.group(1) if lang else "ko"}"{theme}><head><meta charset="utf-8">'
            f'<meta name="viewport" content="width=device-width,initial-scale=1"><style>{extract_styles(p)}\n'
            f'body{{padding:0!important;margin:0}} main{{max-width:760px;margin:0 auto;padding:16px}}</style></head>'
-           f'<body><main>{body}</main></body></html>')
+           f'<body><main>{body}</main>{extra}</body></html>')
     tmp = Path(tempfile.mkdtemp(prefix="ta-shot-"))
     prev = tmp / "preview.html"
     write(prev, doc)
@@ -833,9 +851,9 @@ def do_shot(args):
         emit({"skipped": "Chrome을 찾지 못했습니다(TA_CHROME 환경변수로 지정 가능). 캡처를 건너뜁니다.", "preview": str(prev)},
              args.json, f"Chrome 없음 — 캡처 건너뜀. 미리보기: {prev}")
         return
-    cmd = [chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-first-run",
+    cmd = [chrome, "--headless=new", *(flags or ["--disable-gpu"]), "--hide-scrollbars", "--no-first-run",
            f"--user-data-dir={tmp / 'chrome-profile'}", f"--window-size={args.width},{args.height}",
-           f"--screenshot={out}", prev.as_uri()]
+           f"--screenshot={out}", prev.as_uri() + query]
     r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
     if r.returncode != 0 or not out.exists():
         die(f"Chrome 캡처 실패: {r.stderr.strip()[-400:]}")
@@ -1032,6 +1050,7 @@ def main(argv=None):
     a.add_argument("--dark", action="store_true")
     a.add_argument("--width", type=int, default=820)
     a.add_argument("--height", type=int, default=600)
+    a.add_argument("--step", type=int, help="3D 시각화를 이 단계(0부터)로 바로 보내서 찍기")
     a.add_argument("--out")
     a.add_argument("--json", action="store_true")
 

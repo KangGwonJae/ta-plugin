@@ -1,6 +1,7 @@
 """scripts/ta.py 단위 테스트.  실행: python3 -m unittest discover -s scripts/tests -v"""
 import json
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -139,6 +140,25 @@ class FragmentTests(unittest.TestCase):
         self.assertNotIn(">old<", new)
         self.assertIn('data-main="OLD.pdf"', new)
         self.assertEqual(new.count("<!--pageidx:start"), 1)
+
+    def test_v3d_only_when_used(self):
+        new, changed, _ = ta.apply_fragments(DOC)
+        self.assertNotIn("v3d.css", changed)
+        self.assertNotIn("<!--v3d:start", new)
+        doc = DOC.replace("</main>", '<div class="viz" id="viz1"><div class="v3d" data-label="x"></div>'
+                          '<div class="v3d-fb" hidden></div></div><script>(window.TA3D_Q=window.TA3D_Q||[]).push({})</script></main>')
+        new, changed, _ = ta.apply_fragments(doc)
+        self.assertIn("v3d.css", changed)
+        self.assertIn("v3d.html", changed)
+        self.assertLess(new.index("<!--reader:start"), new.index("<!--v3d:start"))
+        self.assertLess(new.index("<!--v3d:end-->"), new.index("</body>"))
+        again, changed2, _ = ta.apply_fragments(new)
+        self.assertEqual(changed2, [])
+        # 3D 그림을 지우면 조각도 빠진다(런타임 안의 문자열이 스스로를 붙잡지 않는다)
+        gone = re.sub(r'<div class="v3d"[^>]*></div>', "", new)
+        new2, changed3, _ = ta.apply_fragments(gone)
+        self.assertIn("-v3d.html", changed3)
+        self.assertNotIn("<!--v3d:start", new2)
 
     def test_research_kind(self):
         doc = DOC.replace("</main>", '<h2 id="s9">참고문헌</h2><ol id="refs"><li id="ref-1">x</li></ol></main>')

@@ -55,7 +55,7 @@ The SKILL.md files look for the shared script at `../../scripts/ta.py`, so copy 
 | `research` | When you have no materials, researches the web and generates study-note HTML (with numbered sources) | `<topic> [scope/level notes]` |
 | `supplement` | Adds a "supplementary explanation" block right after the part you did not understand | `"<sentence you got stuck on, or screenshot>" [question] [path]` |
 | `example` | Adds an "additional example" block right after the given part | `"<copied part or screenshot>" [path]` |
-| `viz` | Adds an inline SVG/CSS diagram for structure, flow, or size comparison | `"<copied part or screenshot>" [path]` |
+| `viz` | Adds an inline SVG/CSS diagram for structure, flow, or size comparison; when depth, volume, or stacking is the point, a stepped 3D scene (three.js) with a 2D fallback | `"<copied part or screenshot>" [path]` |
 | `math` | Converts formulas to MathJax SVG and adds term-by-term and combined meaning explanations | `[path] [formula or location]` |
 | `quiz` | Generates a self-grading quiz HTML based on the study notes | `[path] [number of questions]` |
 
@@ -97,9 +97,9 @@ A deterministic toolbox the skills call instead of writing ad-hoc code (Python 3
 | `text <html>` | Tag-stripped text with style/script/svg/base64 removed (keeps block ids, source badges, formulas) |
 | `find <html> "<sentence>"` | Locate the smallest block containing the sentence, ignoring whitespace (fuzzy fallback), with raw offsets |
 | `insert` · `wrap` · `backup` | Insert after a block, wrap a span in tags (highlighting), copy to `.backup/` |
-| `fragments <html> [--check]` | Inject or upgrade the shared fragments (toc/viz/math CSS, jump · glossary · pageidx\|tocidx · reader) |
+| `fragments <html> [--check]` | Inject or upgrade the shared fragments (toc/viz/math/v3d CSS, jump · glossary · pageidx\|tocidx · reader · v3d) |
 | `clip <pdf> <page> [--box …]` | Render a page, crop by fractional box, emit a 1200px JPEG data URI |
-| `shot <html> --id …` | Capture one element with the document's CSS in headless Chrome (`--dark`) |
+| `shot <html> --id …` | Capture one element with the document's CSS in headless Chrome (`--dark`; `--step N` for a 3D figure) |
 | `hub` · `stats` · `mathscan` | Folder index.html, character count and reading time, formulas not yet converted to SVG |
 
 Shared fragments carry versions (`<!--jump:start v2-->`, `/*ta-math:start v1*/`). Older study notes upgrade to the latest fragments (read checkboxes, reading time, print CSS) with a single `python3 scripts/ta.py fragments <file>`.
@@ -121,7 +121,7 @@ skills/
   research/    SKILL.md + tocidx.html
   supplement/
   example/
-  viz/         SKILL.md + viz.css
+  viz/         SKILL.md + viz.css, v3d.css, v3d.html (built from 3d/)
   math/        SKILL.md + tex2svg.js, math.css
   quiz/
 evals/                         claude plugin eval cases (prompt.md + graders/ + fixtures/)
