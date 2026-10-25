@@ -58,10 +58,11 @@ SKILL.md 안의 파일 참조는 모두 **그 SKILL.md가 있는 폴더 기준 �
 | `viz/v3d.css` | `/*ta-v3d:start v1*/` | 3D 시각화의 무대·단계 버튼·라벨(문서에 `class="v3d"`가 있을 때만) |
 | `math/math.css` | `/*ta-math:start v1*/` | 수식 블록, 항 색 짝짓기 표 |
 | `generator/jump.html` | `<!--jump:start v2-->` | 문서 안 링크 이동과 "읽던 곳으로" 되돌아가기 |
-| `generator/glossary.html` | `<!--glossary:start v2-->` | 용어 카드 패널 |
+| `generator/glossary.html` | `<!--glossary:start v3-->` | 용어 카드 패널, 약자의 원래 단어(`tc-full`) |
 | `generator/pageidx.html` | `<!--pageidx:start v2-->` | 왼쪽 슬라이드 쪽수 색인(generator 문서) |
 | `research/tocidx.html` | `<!--tocidx:start v2-->` | 왼쪽 절 목차(research 문서) |
 | `generator/reader.html` | `<!--reader:start v1-->` | 절별 읽음 체크, 진행 막대와 읽기 시간, 인쇄 전 펼치기 |
+| `math/eqlink.html` | `<!--eqlink:start v1-->` | 수식 표 줄 ↔ 식의 항 ↔ 그림(`data-eq`, `data-t`) 함께 강조, 표 아래 안내 문장. 문서에 `data-eq`가 있을 때만 |
 | `viz/v3d.html` | `<!--v3d:start v1-->` | three.js 일부(약 550KB) + 3D 런타임. `npm run build:v3d`로 `viz/3d/`에서 만든다. 버전은 `3d/build.mjs`의 `VERSION` |
 
 조각 파일을 고치면 시작 주석의 버전을 올립니다. 그러면 `ta.py fragments <파일>`이 옛 문서의 그 조각만 교체합니다. 버전이 없는 옛 마커는 v0으로 봅니다. 조각 스크립트는 `<html lang>`이 `en`이면 영어 문자열을 씁니다.
