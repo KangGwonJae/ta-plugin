@@ -48,7 +48,12 @@ function mount(spec){
   const ctx={T,scene,cam,css,isDark,ease,clamp,color:(m,v)=>{themed.push([m,v]);m.color.set(css(v));return m;}};
   let update;
   try{update=spec.build(ctx)||(()=>{});}catch(e){return fail(e);}
-  const recolor=()=>{for(const [m,v] of themed)m.color.set(css(v));ground.material.opacity=isDark()?.45:.18;};
+  // 수식-그림 연동(eqlink): 표의 항 tN을 가리키면 '--tN'에 묶인 재질을 빛나게 한다. update의 4번째 인자로도 넘긴다
+  let term=null;
+  const glow=()=>{for(const [m,v] of themed)if(m.emissive){
+    const on=term&&v==='--'+term;m.emissive.set(on?css(v):0x000000);m.emissiveIntensity=on?.55:1;}};
+  el.addEventListener('ta-term',e=>{term=e.detail||null;glow();});
+  const recolor=()=>{for(const [m,v] of themed)m.color.set(css(v));glow();ground.material.opacity=isDark()?.45:.18;};
   recolor();
   new MutationObserver(recolor).observe(root,{attributes:true,attributeFilter:['data-theme']});
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change',recolor);
@@ -81,7 +86,7 @@ function mount(spec){
     const dt=Math.min(timer.getDelta(),0.1);
     if(tw<1){tw=Math.min(1,tw+dt/DUR);const k=ease(tw);for(const n of keys)v[n]=from[n]+(goal[n]-from[n])*k;}
     if(camT<1){camT=Math.min(1,camT+dt/CDUR);const k=ease(camT);cam.position.lerpVectors(cf.p,ct.p,k);ctr.target.lerpVectors(cf.t,ct.t,k);}
-    update(v,dt,step);
+    update(v,dt,step,term);
     ctr.update();
     renderer.render(scene,cam);
     const w=stage.clientWidth,h=stage.clientHeight;

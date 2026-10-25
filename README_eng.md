@@ -97,7 +97,7 @@ A deterministic toolbox the skills call instead of writing ad-hoc code (Python 3
 | `text <html>` | Tag-stripped text with style/script/svg/base64 removed (keeps block ids, source badges, formulas) |
 | `find <html> "<sentence>"` | Locate the smallest block containing the sentence, ignoring whitespace (fuzzy fallback), with raw offsets |
 | `insert` · `wrap` · `backup` | Insert after a block, wrap a span in tags (highlighting), copy to `.backup/` |
-| `fragments <html> [--check]` | Inject or upgrade the shared fragments (toc/viz/math/v3d CSS, jump · glossary · pageidx\|tocidx · reader · v3d) |
+| `fragments <html> [--check]` | Inject or upgrade the shared fragments (toc/viz/math/v3d CSS, jump · glossary · pageidx\|tocidx · reader · eqlink · v3d) |
 | `clip <pdf> <page> [--box …]` | Render a page, crop by fractional box, emit a 1200px JPEG data URI |
 | `shot <html> --id …` | Capture one element with the document's CSS in headless Chrome (`--dark`; `--step N` for a 3D figure) |
 | `hub` · `stats` · `mathscan` | Folder index.html, character count and reading time, formulas not yet converted to SVG |

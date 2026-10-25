@@ -40,7 +40,7 @@ SKILL.md 안의 파일 참조는 모두 **그 SKILL.md가 있는 폴더 기준 �
 | `insert <html> --after <오프셋|#id> --file F` | 블록 뒤에 HTML 조각 삽입(자동 백업) |
 | `wrap <html> --start S --end E --open '<mark …>' --close '</mark>'` | 구간을 태그로 감싸기. 태그에 걸치면 거부 |
 | `backup <html>` | `<폴더>/.backup/<이름>_<일시>.html`로 복사 |
-| `fragments <html> [--main 원자료] [--check] [--force]` | 공용 조각을 넣거나 구버전을 교체. 문서 종류(generator/research)와 viz·math·3D 사용 여부는 자동 판별 |
+| `fragments <html> [--main 원자료] [--check] [--force]` | 공용 조각을 넣거나 구버전을 교체. 문서 종류(generator/research)와 viz·math·3D·수식 연동 사용 여부는 자동 판별 |
 | `clip <pdf> <쪽> [--box x0,y0,x1,y1] [--tag] [--preview]` | 페이지를 렌더링해 비율 박스로 자르고 폭 1200 JPEG data URI(또는 `<img>`)로. `--preview`는 눈금 그린 미리보기 |
 | `shot <html> --id ID [--dark] [--width W] [--step N]` | 요소 하나를 문서 CSS와 함께 헤드리스 Chrome으로 캡처. 3D 시각화면 런타임·장면 정의를 함께 넣고 소프트웨어 WebGL로 그리며, `--step`으로 그 단계(0부터)를 찍음. Chrome이 없으면 건너뜀(`TA_CHROME`으로 지정 가능) |
 | `hub [--dir 폴더]` | 출력 폴더의 학습자료·퀴즈를 모은 `index.html` 생성 |

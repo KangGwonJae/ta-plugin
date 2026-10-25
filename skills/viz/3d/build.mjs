@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const VERSION = 1; // v3d.html을 바꾸면 올린다(ta.py fragments가 옛 문서의 조각을 교체)
+const VERSION = 2; // v3d.html을 바꾸면 올린다(ta.py fragments가 옛 문서의 조각을 교체)
 const here = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(here, '../../../node_modules/three/package.json'), 'utf8'));
 const out = await build({ entryPoints: [join(here, 'entry.js')], bundle: true, minify: true, format: 'iife', legalComments: 'none', write: false });

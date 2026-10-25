@@ -553,9 +553,11 @@ FRAG_HTML = [  # 순서대로 </body> 앞에 들어간다
     ("pageidx", SKILLS / "generator" / "pageidx.html"),
     ("tocidx", SKILLS / "research" / "tocidx.html"),
     ("reader", SKILLS / "generator" / "reader.html"),
+    ("eqlink", SKILLS / "math" / "eqlink.html"),  # 수식 표와 그림 연동. data-eq가 있을 때만
     ("v3d", SKILLS / "viz" / "v3d.html"),  # three.js + 3D 런타임. 3D 시각화가 있을 때만
 ]
 V3D_RE = re.compile(r'class="v3d["\s]')
+EQLINK_RE = re.compile(r'\sdata-eq="[^"]+"')
 
 
 def html_marker_re(name):
@@ -589,7 +591,7 @@ def guess_main(raw):
 def fragments_status(raw):
     kind = doc_kind(raw)
     want = {"toc": True, "viz": 'class="viz' in raw or "class='viz" in raw, "math": bool(re.search(r'class="m(?: m-d)?"', raw)),
-            "v3d": bool(V3D_RE.search(raw))}
+            "v3d": bool(V3D_RE.search(raw)), "eqlink": bool(EQLINK_RE.search(raw))}
     rows = []
     for name, f, pat, _end in FRAG_CSS:
         ship = f.read_text(encoding="utf-8")
@@ -600,8 +602,8 @@ def fragments_status(raw):
                      "status": _status(want[name], have, sv)})
     for name, f in FRAG_HTML:
         needed = not ((name == "pageidx" and kind == "research") or (name == "tocidx" and kind == "generator"))
-        if name == "v3d":
-            needed = want["v3d"]
+        if name in ("v3d", "eqlink"):
+            needed = want[name]
         ship = f.read_text(encoding="utf-8")
         m = re.search(rf"<!--{name}:start(?:\s+v(\d+))?-->", raw)
         have = int(m.group(1) or 0) if m else None

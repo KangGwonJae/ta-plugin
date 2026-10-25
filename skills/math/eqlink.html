@@ -1,0 +1,63 @@
+<!--eqlink:start v1-->
+<style id="eqlink-style">
+.eql-off{opacity:.3!important;transition:opacity .2s}
+.v3d-labels .lb.eql-off:not(.on){opacity:0!important}
+.eql-tag{cursor:pointer;transition:opacity .2s,background .2s}
+table.eqx tr.eql-on{background:color-mix(in srgb,var(--eql) 16%,transparent)}
+table.eqx tr.eql-tag:focus-visible{outline:2px solid var(--eql,var(--accent));outline-offset:-2px}
+svg .eql-on:is(rect,path,line,circle,ellipse,polygon,polyline),svg g.eql-on>:is(rect,path,line,circle,ellipse,polygon,polyline){stroke:var(--eql)!important;stroke-width:3px!important}
+svg text.eql-on,svg g.eql-on>text{fill:var(--eql)!important;font-weight:700}
+span.eql-on,div.eql-on{background:color-mix(in srgb,var(--eql) 18%,transparent);border-radius:4px}
+.eql-hint{margin:-10px 0 14px;font-size:.8rem;color:var(--muted)}
+</style>
+<script>
+/* 수식-그림 연동: data-eq로 수식 표(table.eqx)와 이어진 그림에서, 같은 항(t1~t5)을 함께 강조한다 */
+(function(){
+  const EN=(document.documentElement.lang||'').startsWith('en');
+  const HINT=EN?'Hover or tap a row to highlight the same part in the equation and the figure.':'표의 줄에 마우스를 올리거나 누르면 식과 그림에서 같은 부분이 함께 강조돼요.';
+  const termOf=el=>{const d=el.getAttribute('data-t');if(d)return d;const m=/(?:^|\s)(t[1-5])(?:\s|$)/.exec(el.getAttribute('class')||'');return m?m[1]:null;};
+  const groups=new Map();
+  document.querySelectorAll('[data-eq]').forEach(fig=>{
+    fig.getAttribute('data-eq').split(/\s+/).forEach(id=>{
+      const tab=document.getElementById(id);
+      if(!tab)return;
+      if(!groups.has(id)){
+        const eq=tab.previousElementSibling&&tab.previousElementSibling.matches('.m-d,.eq')?tab.previousElementSibling:null;
+        groups.set(id,{tab,eq,figs:[]});
+      }
+      groups.get(id).figs.push(fig);
+    });
+  });
+  groups.forEach(g=>{
+    const boxes=[g.tab,g.eq,...g.figs].filter(Boolean);
+    const tagged=()=>{
+      const out=[...g.tab.querySelectorAll('tr')].filter(r=>r.querySelector('td'));
+      if(g.eq)out.push(...[...g.eq.querySelectorAll('[class]')].filter(termOf));
+      g.figs.forEach(f=>out.push(...f.querySelectorAll('[data-t]'),...f.querySelectorAll('.v3d-labels .lb')));
+      return out;
+    };
+    let sticky=null;
+    function show(t){
+      tagged().forEach(el=>{
+        const on=!!t&&termOf(el)===t;
+        el.classList.toggle('eql-on',!!on);
+        el.classList.toggle('eql-off',!!t&&!on);
+        if(on)el.style.setProperty('--eql','var(--'+t+')');
+      });
+      g.figs.forEach(f=>f.dispatchEvent(new CustomEvent('ta-term',{detail:t})));
+    }
+    // 항 색이 없는 줄(조합 행 등)은 흐려지기만 하고, 가리킬 수는 없다
+    tagged().filter(termOf).forEach(el=>{
+      el.classList.add('eql-tag');
+      if(el.tagName==='TR'){el.tabIndex=0;el.addEventListener('focus',()=>show(termOf(el)));el.addEventListener('blur',()=>show(sticky));}
+      el.addEventListener('pointerenter',()=>show(termOf(el)));
+      el.addEventListener('click',()=>{const t=termOf(el);sticky=sticky===t?null:t;show(sticky);});
+    });
+    boxes.forEach(b=>b.addEventListener('pointerleave',()=>show(sticky)));
+    const p=document.createElement('p');
+    p.className='eql-hint';p.textContent=HINT;
+    g.tab.after(p);
+  });
+})();
+</script>
+<!--eqlink:end-->

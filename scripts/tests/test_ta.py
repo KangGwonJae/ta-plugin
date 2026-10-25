@@ -160,6 +160,20 @@ class FragmentTests(unittest.TestCase):
         self.assertIn("-v3d.html", changed3)
         self.assertNotIn("<!--v3d:start", new2)
 
+    def test_eqlink_only_when_linked(self):
+        new, changed, _ = ta.apply_fragments(DOC)
+        self.assertNotIn("eqlink.html", changed)
+        doc = DOC.replace("</main>", '<table class="eqx" id="eqx-1"><tr class="t1"><td>W</td></tr></table>'
+                          '<div class="viz" id="viz1" data-eq="eqx-1"><svg><text data-t="t1">W</text></svg></div></main>')
+        new, changed, _ = ta.apply_fragments(doc)
+        self.assertIn("eqlink.html", changed)
+        self.assertLess(new.index("<!--reader:start"), new.index("<!--eqlink:start"))
+        again, changed2, _ = ta.apply_fragments(new)
+        self.assertEqual(changed2, [])
+        unlinked = new.replace(' data-eq="eqx-1"', "")
+        _, changed3, _ = ta.apply_fragments(unlinked)
+        self.assertIn("-eqlink.html", changed3)
+
     def test_research_kind(self):
         doc = DOC.replace("</main>", '<h2 id="s9">참고문헌</h2><ol id="refs"><li id="ref-1">x</li></ol></main>')
         new, changed, kind = ta.apply_fragments(doc)
