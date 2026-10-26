@@ -55,6 +55,7 @@ The SKILL.md files look for the shared script at `../../scripts/ta.py`, so copy 
 | `research` | When you have no materials, researches the web and generates study-note HTML (with numbered sources) | `<topic> [scope/level notes]` |
 | `supplement` | Adds a "supplementary explanation" block right after the part you did not understand | `"<sentence you got stuck on, or screenshot>" [question] [path]` |
 | `example` | Adds an "additional example" block right after the given part | `"<copied part or screenshot>" [path]` |
+| `regenerate` | Rewrites a paragraph or a whole section (by TOC number) from scratch in place, re-reading the source; a section rewrite also drops the supplements/examples inside it | `"<copied part, screenshot, or TOC number>" [direction] [path]` |
 | `viz` | Adds an inline SVG/CSS diagram for structure, flow, or size comparison; when depth, volume, or stacking is the point, a stepped 3D scene (three.js) with a 2D fallback | `"<copied part or screenshot>" [path]` |
 | `math` | Converts formulas to MathJax SVG and adds term-by-term and combined meaning explanations | `[path] [formula or location]` |
 | `quiz` | Generates a self-grading quiz HTML based on the study notes | `[path] [number of questions]` |
@@ -65,7 +66,7 @@ Invoke as `/ta:<skill>` in Claude Code and `$<skill>` in Codex. `example`, `viz`
 
 1. In the folder with your lecture materials, give `generator` "Newton's laws of motion chapter2.pdf" → creates `학습자료/chapter2.pdf_학습자료.html` (`study-notes/chapter2.pdf_notes.html` when `lang` is `en`).
 2. When you get stuck while reading, paste the sentence and ask "What does this mean?" → `supplement` adds an explanation at that spot.
-3. "One more example" → `example`; "Show me as a diagram" → `viz`.
+3. "One more example" → `example`; "Show me as a diagram" → `viz`; if the explanation itself is hard or lacks context, "rewrite this part" → `regenerate`.
 4. `quiz` → creates `학습자료/chapter2.pdf_퀴즈.html` (`study-notes/chapter2.pdf_quiz.html` in English mode).
 
 The output is a **single HTML file** (images embedded as base64, light/dark mode, a page index on the left, glossary tooltips, per-section read checkboxes with an estimated reading time, print CSS), so you can open or share it as is. All output is saved to a `학습자료/` folder in the current working directory (`study-notes/` when `lang` is `en`; configurable). Materials longer than about 80 pages are split into parts, and a hub `index.html` is built alongside.
@@ -97,6 +98,7 @@ A deterministic toolbox the skills call instead of writing ad-hoc code (Python 3
 | `text <html>` | Tag-stripped text with style/script/svg/base64 removed (keeps block ids, source badges, formulas) |
 | `find <html> "<sentence>"` | Locate the smallest block containing the sentence, ignoring whitespace (fuzzy fallback), with raw offsets |
 | `insert` · `wrap` · `backup` | Insert after a block, wrap a span in tags (highlighting), copy to `.backup/` |
+| `replace <html> --id …` | Replace a block (or, for a heading id, the whole section up to the next heading of the same level) with an HTML fragment; reports ids that disappeared (`--dry-run` to preview) |
 | `fragments <html> [--check]` | Inject or upgrade the shared fragments (toc/viz/math/v3d CSS, jump · glossary · pageidx\|tocidx · reader · eqlink · v3d) |
 | `clip <pdf> <page> [--box …]` | Render a page, crop by fractional box, emit a 1200px JPEG data URI |
 | `shot <html> --id …` | Capture one element with the document's CSS in headless Chrome (`--dark`; `--step N` for a 3D figure) |
@@ -121,6 +123,7 @@ skills/
   research/    SKILL.md + tocidx.html
   supplement/
   example/
+  regenerate/
   viz/         SKILL.md + viz.css, v3d.css, v3d.html (built from 3d/)
   math/        SKILL.md + tex2svg.js, math.css
   quiz/

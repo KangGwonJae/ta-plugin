@@ -1,6 +1,6 @@
 {
   "name": "ta",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Teaching-assistant skills: turn lecture PDFs/slides or web research into middle-schooler-friendly HTML study notes (Korean/English), then add supplements, examples, visualizations, MathJax formulas, and quizzes.",
   "author": {
     "name": "KangGwonJae",

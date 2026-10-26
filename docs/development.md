@@ -19,6 +19,7 @@ skills/
   research/    SKILL.md + tocidx.html
   supplement/
   example/
+  regenerate/
   viz/         SKILL.md + viz.css, v3d.css, v3d.html(빌드 결과), 3d/(entry.js, runtime.js, build.mjs)
   math/        SKILL.md + tex2svg.js, math.css
   quiz/
@@ -39,6 +40,7 @@ SKILL.md 안의 파일 참조는 모두 **그 SKILL.md가 있는 폴더 기준 �
 | `find <html> "<문장>" [--json]` | 공백 차이를 무시하고(없으면 유사 문장으로) 그 문장을 담는 가장 작은 블록과 원본 오프셋 |
 | `insert <html> --after <오프셋|#id> --file F` | 블록 뒤에 HTML 조각 삽입(자동 백업) |
 | `wrap <html> --start S --end E --open '<mark …>' --close '</mark>'` | 구간을 태그로 감싸기. 태그에 걸치면 거부 |
+| `replace <html> --id ID(또는 --start S --end E) --file F [--dry-run]` | 블록을 조각으로 교체(자동 백업). 제목 id면 다음 같은 급 제목 전까지의 절 전체. 원래 구간에 있던 id 중 새 조각에 없는 것(`missing_ids`)을 보고하고, 구간 밖 id와 겹치면 거부. `--dry-run`은 구간·id·텍스트만 |
 | `backup <html>` | `<폴더>/.backup/<이름>_<일시>.html`로 복사 |
 | `fragments <html> [--main 원자료] [--check] [--force]` | 공용 조각을 넣거나 구버전을 교체. 문서 종류(generator/research)와 viz·math·3D·수식 연동 사용 여부는 자동 판별 |
 | `clip <pdf> <쪽> [--box x0,y0,x1,y1] [--tag] [--preview]` | 페이지를 렌더링해 비율 박스로 자르고 폭 1200 JPEG data URI(또는 `<img>`)로. `--preview`는 눈금 그린 미리보기 |

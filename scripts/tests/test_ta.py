@@ -111,6 +111,44 @@ class WrapTests(unittest.TestCase):
         self.assertFalse(ok)
 
 
+class ReplaceTests(unittest.TestCase):
+    def test_section_range_heading_and_block(self):
+        p = ta.parse(DOC)
+        s, e = ta.section_range(p, "c1")
+        self.assertTrue(DOC[s:].startswith('<h3 id="c1">'))
+        self.assertTrue(DOC[:e].endswith("</table>"))
+        s2, e2 = ta.section_range(p, "s2")
+        self.assertTrue(DOC[s2:].startswith('<h2 id="s2">'))
+        self.assertEqual(e2, e)
+        s, e = ta.section_range(p, "ex1")
+        self.assertEqual((s, e), (p.by_id["ex1"].start, p.by_id["ex1"].end))
+
+    def test_section_stops_at_next_heading_and_fragment(self):
+        doc = DOC.replace('<p>식 ', '<h3 id="c2">1.2 다음</h3>\n<p>식 ')
+        p = ta.parse(doc)
+        s, e = ta.section_range(p, "c1")
+        self.assertTrue(doc[:e].endswith("</div>"))
+        self.assertIn('id="ex1"', doc[s:e])
+        flat = "<body><h2 id='s2'>A</h2><p>a</p>\n<!--jump:start v2--><style>x</style><script>y</script></body>"
+        p = ta.parse(flat)
+        s, e = ta.section_range(p, "s2")
+        self.assertEqual(flat[s:e], "<h2 id='s2'>A</h2><p>a</p>")
+
+    def test_cli_replace_reports_missing_ids(self):
+        with tempfile.TemporaryDirectory() as d:
+            f, frag = Path(d, "n.html"), Path(d, "frag.html")
+            f.write_text(DOC, encoding="utf-8")
+            frag.write_text('<h3 id="c1">1.1 Head 다시</h3>\n<p>새 설명.</p>\n', encoding="utf-8")
+            ta.main(["replace", str(f), "--id", "c1", "--file", str(frag), "--no-backup"])
+            out = f.read_text(encoding="utf-8")
+            self.assertIn("새 설명.", out)
+            self.assertNotIn('id="ex1"', out)
+            self.assertIn("</main>", out)
+            frag.write_text('<p id="s2">겹침</p>', encoding="utf-8")
+            with self.assertRaises(SystemExit):
+                ta.main(["replace", str(f), "--id", "c1", "--file", str(frag), "--no-backup"])
+
+
 class FragmentTests(unittest.TestCase):
     def test_apply_generator(self):
         new, changed, kind = ta.apply_fragments(DOC)

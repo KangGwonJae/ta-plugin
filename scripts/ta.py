@@ -8,6 +8,7 @@
   find        공백 차이를 무시하고(없으면 유사 문장으로) 질의를 담는 가장 작은 블록과 원본 오프셋을 찾음
   insert      블록 끝(오프셋 또는 #id) 뒤에 HTML 조각 삽입
   wrap        원본 오프셋 구간을 여는/닫는 태그로 감쌈(형광펜 표시용)
+  replace     블록(제목 id면 다음 같은 급 제목 전까지의 절 전체)을 HTML 조각으로 교체, 사라진 id 보고
   backup      <폴더>/.backup/<이름>_<YYYYMMDD-HHMMSS>.html 로 복사
   fragments   공용 조각(toc/viz/math CSS, jump/glossary/pageidx|tocidx/reader)을 넣거나 최신으로 교체
   clip        PDF 페이지를 렌더링해 비율 박스로 자르고 폭 1200 JPEG data URI(또는 <img>)로 출력
@@ -474,6 +475,47 @@ def wrap_ok(p, s, e):
         if n.start < s < n.open_end or n.start < e < n.open_end:
             return False, "구간 경계가 태그 안에 있습니다"
     return True, ""
+
+
+HEADINGS = ("h1", "h2", "h3", "h4", "h5", "h6")
+SECTION_STOP = {"script", "style", "nav", "footer"}
+
+
+def _heads_at_or_above(n, level):
+    """n 또는 그 자손에 level 이하(더 큰 제목) 제목이 있는지."""
+    stack = [n]
+    while stack:
+        c = stack.pop()
+        if c.tag in HEADINGS and int(c.tag[1]) <= level:
+            return True
+        stack.extend(x for x in c.children if isinstance(x, Node))
+    return False
+
+
+def section_range(p, nid):
+    """id 요소의 교체 구간 [start,end). 제목(h2·h3…)이면 그 제목부터 같거나 더 큰 제목 전까지(절 전체),
+    아니면 요소 자체. 끝은 script/style/nav/footer와 공용 조각 시작 주석(<!--x:start) 앞에서 멈춘다."""
+    n = p.by_id.get(nid)
+    if n is None or n.end is None:
+        return None
+    if n.tag not in HEADINGS:
+        return n.start, n.end
+    level = int(n.tag[1])
+    par = n.parent
+    end = par.close_start() if par.tag != "#root" else len(p.raw)
+    for c in par.children[n.idx + 1:]:
+        if isinstance(c, Node) and (c.tag in SECTION_STOP or _heads_at_or_above(c, level)):
+            end = c.start
+            break
+    seg = p.raw[n.start:end]
+    m = re.search(r"<!--\s*[\w-]+:start", seg)
+    if m:
+        seg = seg[:m.start()]
+    return n.start, n.start + len(seg.rstrip())
+
+
+def ids_in(p, s, e):
+    return [n.id for n in p.all if n.id and s <= n.start and n.end is not None and n.end <= e]
 
 
 # ---------------------------------------------------------------- 수식 후보 찾기
@@ -1021,6 +1063,16 @@ def main(argv=None):
     a.add_argument("--no-backup", action="store_true")
     a.add_argument("--json", action="store_true")
 
+    a = sp.add_parser("replace", help="블록(또는 제목 id면 절 전체)을 HTML 조각으로 바꾸기")
+    a.add_argument("html")
+    a.add_argument("--id", help="바꿀 요소 id. 제목(h2·h3…)이면 다음 같은 급 제목 전까지")
+    a.add_argument("--start", type=int, help="--id 대신 원본 오프셋 구간 시작(find의 block.start)")
+    a.add_argument("--end", type=int, help="구간 끝(find의 block.end)")
+    a.add_argument("--file", help="새 HTML 조각 파일(--dry-run이면 없어도 됨)")
+    a.add_argument("--dry-run", action="store_true", help="바꾸지 않고 구간·안의 id·텍스트만 출력")
+    a.add_argument("--no-backup", action="store_true")
+    a.add_argument("--json", action="store_true")
+
     a = sp.add_parser("backup", help=".backup/ 으로 복사")
     a.add_argument("html")
     a.add_argument("--json", action="store_true")
@@ -1127,6 +1179,41 @@ def main(argv=None):
         write(args.html, new)
         emit({"start": args.start, "end": args.end + len(args.open), "backup": bk}, args.json,
              f"감쌈 완료 {args.start}-{args.end} (백업: {bk})")
+    elif args.cmd == "replace":
+        raw = read(args.html)
+        p = parse(raw)
+        if args.id:
+            rng = section_range(p, args.id)
+            if not rng:
+                die(f"id={args.id} 요소가 없습니다")
+            s, e = rng
+        elif args.start is not None and args.end is not None:
+            s, e = args.start, args.end
+            if not (0 <= s < e <= len(raw)):
+                die("구간이 범위를 벗어났습니다")
+            ok, why = wrap_ok(p, s, e)
+            if not ok:
+                die("바꿀 수 없습니다: " + why)
+        else:
+            die("--id 또는 --start/--end 가 필요합니다")
+        old_ids = ids_in(p, s, e)
+        if args.dry_run:
+            text = visible_text(parse(raw[s:e])).strip()
+            emit({"start": s, "end": e, "ids": old_ids, "text": text}, args.json,
+                 f"구간 {s}-{e}  ids={old_ids}\n{text}")
+            return
+        if not args.file:
+            die("--file 이 필요합니다")
+        frag = read(args.file).strip("\n")
+        new_ids = set(ids_in(parse(frag), 0, len(frag)))
+        dup = [i for i in new_ids if i in p.by_id and i not in old_ids]
+        if dup:
+            die(f"조각의 id가 구간 밖에 이미 있습니다: {', '.join(sorted(dup))}")
+        bk = None if args.no_backup else str(do_backup(args.html))
+        write(args.html, raw[:s] + frag + raw[e:])
+        missing = [i for i in old_ids if i not in new_ids]
+        emit({"start": s, "end": s + len(frag), "missing_ids": missing, "backup": bk}, args.json,
+             f"교체 완료 {s}-{s + len(frag)} (사라진 id: {', '.join(missing) or '없음'}, 백업: {bk})")
     elif args.cmd == "backup":
         dst = do_backup(args.html)
         emit({"backup": str(dst)}, args.json, str(dst))
