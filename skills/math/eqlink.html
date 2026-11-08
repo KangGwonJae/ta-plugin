@@ -1,4 +1,4 @@
-<!--eqlink:start v2-->
+<!--eqlink:start v3-->
 <style id="eqlink-style">
 .eql-off{opacity:.3!important;transition:opacity .2s}
 .v3d-labels .lb.eql-off:not(.on){opacity:0!important}
@@ -9,6 +9,12 @@ svg .eql-on:is(rect,path,line,circle,ellipse,polygon,polyline),svg g.eql-on>:is(
 svg text.eql-on,svg g.eql-on>text{fill:var(--eql)!important;font-weight:700}
 span.eql-on,div.eql-on{background:color-mix(in srgb,var(--eql) 18%,transparent);border-radius:4px}
 .eql-hint{margin:-10px 0 14px;font-size:.8rem;color:var(--muted)}
+.eq-case{border-left:3px solid var(--line);padding:2px 0 2px 16px;margin:20px 0}
+.eq-case-h{font-weight:700;margin-bottom:.3em}
+.eq-sym-note{font-size:.82rem;color:var(--muted);margin:.2em 0 .6em}
+.eq-sym-hit{fill:transparent!important;stroke:none!important}
+.eq-sym-tip{position:fixed;z-index:9999;pointer-events:none;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.18);padding:5px 10px;font-size:.86rem;white-space:nowrap}
+@media print{.eq-sym-tip,.eq-sym-note{display:none}}
 </style>
 <script>
 /* 수식 강조: 뜯어보기 표(table.eqx)와 바로 앞 식, data-eq로 이어진 그림에서 같은 항(t1~t5)을 함께 강조한다 */
@@ -60,6 +66,43 @@ span.eql-on,div.eql-on{background:color-mix(in srgb,var(--eql) 18%,transparent);
     p.className='eql-hint';p.textContent=HINT;
     g.tab.after(p);
   });
+})();
+/* 수식 사례: 식과 표의 숫자(\class{sv-키}{숫자})에 마우스를 올리면 .eq-sym의 기호와 뜻을 말풍선으로 보여 준다 */
+(function(){
+  const cases=[...document.querySelectorAll('.eq-case')].filter(b=>b.querySelector('.eq-sym [data-k]'));
+  if(!cases.length)return;
+  const EN=(document.documentElement.lang||'').startsWith('en');
+  const NOTE=EN?'Hover over a number in the equation or table to see which symbol it fills.':'식과 표의 숫자에 마우스를 올리면 어떤 기호에 넣은 값인지 보여요.';
+  const tip=document.createElement('div');
+  tip.className='eq-sym-tip';tip.setAttribute('role','tooltip');tip.hidden=true;document.body.appendChild(tip);
+  const hide=()=>{tip.hidden=true;};
+  const show=(g,html)=>{
+    tip.innerHTML=html;tip.hidden=false;
+    const r=g.getBoundingClientRect(),w=tip.offsetWidth,h=tip.offsetHeight;
+    let y=r.top-h-8;if(y<8)y=r.bottom+8;
+    tip.style.left=Math.max(8,Math.min(r.left+r.width/2-w/2,innerWidth-w-8))+'px';tip.style.top=y+'px';
+  };
+  cases.forEach(box=>{
+    const syms={};
+    box.querySelectorAll('.eq-sym [data-k]').forEach(s=>{syms[s.dataset.k]=s.innerHTML;});
+    const eq=box.querySelector('.m-d');
+    if(eq){const p=document.createElement('p');p.className='eq-sym-note';p.textContent=NOTE;eq.before(p);}
+    box.querySelectorAll('svg g[class*="sv-"]').forEach(g=>{
+      const m=/(?:^|\s)sv-(\w+)/.exec(g.getAttribute('class')||'');
+      if(!m||!syms[m[1]])return;
+      const b=g.getBBox();
+      if(b.width){
+        const hit=document.createElementNS('http://www.w3.org/2000/svg','rect');
+        for(const [k,v] of [['x',b.x],['y',b.y],['width',b.width],['height',b.height],['class','eq-sym-hit']])hit.setAttribute(k,v);
+        g.insertBefore(hit,g.firstChild);
+      }
+      g.style.cursor='help';
+      g.addEventListener('pointerenter',()=>show(g,syms[m[1]]));
+      g.addEventListener('pointerleave',e=>{if(e.pointerType!=='touch')hide();});
+    });
+  });
+  document.addEventListener('pointerdown',e=>{if(!(e.target.closest&&e.target.closest('g[class*="sv-"]')))hide();});
+  addEventListener('scroll',hide,true);
 })();
 </script>
 <!--eqlink:end-->
