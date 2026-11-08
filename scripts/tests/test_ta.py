@@ -198,7 +198,7 @@ class FragmentTests(unittest.TestCase):
         self.assertIn("-v3d.html", changed3)
         self.assertNotIn("<!--v3d:start", new2)
 
-    def test_eqlink_only_when_linked(self):
+    def test_eqlink_follows_eqx_table(self):
         new, changed, _ = ta.apply_fragments(DOC)
         self.assertNotIn("eqlink.html", changed)
         doc = DOC.replace("</main>", '<table class="eqx" id="eqx-1"><tr class="t1"><td>W</td></tr></table>'
@@ -208,9 +208,14 @@ class FragmentTests(unittest.TestCase):
         self.assertLess(new.index("<!--reader:start"), new.index("<!--eqlink:start"))
         again, changed2, _ = ta.apply_fragments(new)
         self.assertEqual(changed2, [])
+        # 그림 연결이 없어도 뜯어보기 표가 있으면 강조는 유지된다
         unlinked = new.replace(' data-eq="eqx-1"', "")
         _, changed3, _ = ta.apply_fragments(unlinked)
-        self.assertIn("-eqlink.html", changed3)
+        self.assertEqual(changed3, [])
+        # 표와 그림 연결이 모두 없어지면 스크립트를 뺀다
+        no_table = re.sub(r'<table class="eqx".*?</table>', "", unlinked, flags=re.S)
+        _, changed4, _ = ta.apply_fragments(no_table)
+        self.assertIn("-eqlink.html", changed4)
 
     def test_research_kind(self):
         doc = DOC.replace("</main>", '<h2 id="s9">참고문헌</h2><ol id="refs"><li id="ref-1">x</li></ol></main>')

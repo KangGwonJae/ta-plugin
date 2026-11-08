@@ -1,4 +1,4 @@
-<!--eqlink:start v1-->
+<!--eqlink:start v2-->
 <style id="eqlink-style">
 .eql-off{opacity:.3!important;transition:opacity .2s}
 .v3d-labels .lb.eql-off:not(.on){opacity:0!important}
@@ -11,21 +11,22 @@ span.eql-on,div.eql-on{background:color-mix(in srgb,var(--eql) 18%,transparent);
 .eql-hint{margin:-10px 0 14px;font-size:.8rem;color:var(--muted)}
 </style>
 <script>
-/* 수식-그림 연동: data-eq로 수식 표(table.eqx)와 이어진 그림에서, 같은 항(t1~t5)을 함께 강조한다 */
+/* 수식 강조: 뜯어보기 표(table.eqx)와 바로 앞 식, data-eq로 이어진 그림에서 같은 항(t1~t5)을 함께 강조한다 */
 (function(){
   const EN=(document.documentElement.lang||'').startsWith('en');
-  const HINT=EN?'Hover or tap a row to highlight the same part in the equation and the figure.':'표의 줄에 마우스를 올리거나 누르면 식과 그림에서 같은 부분이 함께 강조돼요.';
+  const HINT=EN?'Hover or tap a table row or an equation term to highlight the matching parts.':'표의 줄이나 식의 항에 마우스를 올리거나 누르면 같은 부분이 함께 강조돼요.';
   const termOf=el=>{const d=el.getAttribute('data-t');if(d)return d;const m=/(?:^|\s)(t[1-5])(?:\s|$)/.exec(el.getAttribute('class')||'');return m?m[1]:null;};
   const groups=new Map();
+  const eqBefore=tab=>{
+    const box=!tab.previousElementSibling&&tab.parentElement.matches('.tw')?tab.parentElement:tab;
+    const prev=box.previousElementSibling;
+    return prev&&prev.matches('.m-d,.eq')?prev:null;
+  };
+  document.querySelectorAll('table.eqx').forEach(tab=>groups.set(tab,{tab,eq:eqBefore(tab),figs:[]}));
   document.querySelectorAll('[data-eq]').forEach(fig=>{
     fig.getAttribute('data-eq').split(/\s+/).forEach(id=>{
       const tab=document.getElementById(id);
-      if(!tab)return;
-      if(!groups.has(id)){
-        const eq=tab.previousElementSibling&&tab.previousElementSibling.matches('.m-d,.eq')?tab.previousElementSibling:null;
-        groups.set(id,{tab,eq,figs:[]});
-      }
-      groups.get(id).figs.push(fig);
+      if(tab&&groups.has(tab))groups.get(tab).figs.push(fig);
     });
   });
   groups.forEach(g=>{
@@ -36,6 +37,7 @@ span.eql-on,div.eql-on{background:color-mix(in srgb,var(--eql) 18%,transparent);
       g.figs.forEach(f=>out.push(...f.querySelectorAll('[data-t]'),...f.querySelectorAll('.v3d-labels .lb')));
       return out;
     };
+    if((!g.eq&&!g.figs.length)||!tagged().some(termOf))return;
     let sticky=null;
     function show(t){
       tagged().forEach(el=>{

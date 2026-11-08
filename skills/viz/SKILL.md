@@ -48,7 +48,7 @@ argument-hint: "<학습자료에서 복사한 부분 또는 스크린샷>" [학�
 - **CSS는 한 번만**: `viz.css`는 문서에 `.viz` 블록이 있으면 `ta.py fragments <파일>`이 `</style>` 앞에 넣는다(마커 `/*ta-viz:start v1*/`, 구버전이면 교체). 문서 CSS에서 `.viz`를 따로 정의하지 않는다.
 
 ## 수식과 연동
-그림이 문서의 어떤 식(`table.eqx`)을 보여 주면 둘을 잇는다(`../math/SKILL.md` 7번).
+식과 뜯어보기 표(`table.eqx`)의 강조는 그림이 없어도 기본으로 동작한다(`../math/SKILL.md` 6번). 그림이 그 식을 보여 주면 아래처럼 그림도 잇는다(`../math/SKILL.md` 7번).
 - `.viz`에 `data-eq="eqx-N"`(그 식의 뜯어보기 표 id). 식 두 개를 보여 주면 공백으로 나눠 적는다.
 - 그림 안에서 항 tN에 해당하는 요소에 `data-t="tN"`: SVG의 `rect`·`path`·`line`·`text`·`g`, HTML `span` 모두 된다. 강조되면 도형은 그 항 색 테두리, 글자는 그 항 색 굵은 글씨가 되고, 나머지 `data-t` 요소는 흐려진다. 항과 무관한 요소에는 달지 않는다.
 - 그림 안 글자 색을 항 색과 맞출 때는 `style="fill:var(--tN)"`처럼 CSS 변수만 쓴다.

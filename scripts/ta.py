@@ -595,11 +595,11 @@ FRAG_HTML = [  # 순서대로 </body> 앞에 들어간다
     ("pageidx", SKILLS / "generator" / "pageidx.html"),
     ("tocidx", SKILLS / "research" / "tocidx.html"),
     ("reader", SKILLS / "generator" / "reader.html"),
-    ("eqlink", SKILLS / "math" / "eqlink.html"),  # 수식 표와 그림 연동. data-eq가 있을 때만
+    ("eqlink", SKILLS / "math" / "eqlink.html"),  # 수식·표(·그림) 강조. 뜯어보기 표(table.eqx)나 data-eq가 있으면 들어간다
     ("v3d", SKILLS / "viz" / "v3d.html"),  # three.js + 3D 런타임. 3D 시각화가 있을 때만
 ]
 V3D_RE = re.compile(r'class="v3d["\s]')
-EQLINK_RE = re.compile(r'\sdata-eq="[^"]+"')
+EQLINK_RE = re.compile(r'\sdata-eq="[^"]+"|<table\b[^>]*\bclass="[^"]*\beqx\b')
 
 
 def html_marker_re(name):
