@@ -1,4 +1,4 @@
-<!--eqlink:start v3-->
+<!--eqlink:start v4-->
 <style id="eqlink-style">
 .eql-off{opacity:.3!important;transition:opacity .2s}
 .v3d-labels .lb.eql-off:not(.on){opacity:0!important}
@@ -15,6 +15,9 @@ span.eql-on,div.eql-on{background:color-mix(in srgb,var(--eql) 18%,transparent);
 .eq-sym-hit{fill:transparent!important;stroke:none!important}
 .eq-sym-tip{position:fixed;z-index:9999;pointer-events:none;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.18);padding:5px 10px;font-size:.86rem;white-space:nowrap}
 @media print{.eq-sym-tip,.eq-sym-note{display:none}}
+.eq-pin-box.on>.m-d{--scale:calc(1 - .16*var(--p,0));position:sticky;top:0;z-index:20;padding:6px 0 4px;margin-top:0;transform:scale(var(--scale));transform-origin:left top;width:calc(100%/var(--scale));background:color-mix(in srgb,var(--bg) 95%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 1px 0 color-mix(in srgb,var(--line) calc(var(--line-o,0)*100%),transparent)}
+.eq-pin-box.on [id]{scroll-margin-top:calc(var(--eq-h,90px) + 16px)}
+@media print{.eq-pin-box.on>.m-d{position:static;transform:none;width:auto;box-shadow:none;background:none;-webkit-backdrop-filter:none;backdrop-filter:none}}
 </style>
 <script>
 /* 수식 강조: 뜯어보기 표(table.eqx)와 바로 앞 식, data-eq로 이어진 그림에서 같은 항(t1~t5)을 함께 강조한다 */
@@ -103,6 +106,45 @@ span.eql-on,div.eql-on{background:color-mix(in srgb,var(--eql) 18%,transparent);
   });
   document.addEventListener('pointerdown',e=>{if(!(e.target.closest&&e.target.closest('g[class*="sv-"]')))hide();});
   addEventListener('scroll',hide,true);
+})();
+/* 긴 뜯어보기 표를 읽는 동안 바로 위 식을 화면 위쪽에 고정한다. 식은 복제하지 않는다 */
+(function(){
+  const items=[];
+  document.querySelectorAll('table.eqx').forEach(tab=>{
+    const eq=tab.previousElementSibling;
+    if(!eq||!eq.matches('.m-d'))return;
+    const box=document.createElement('div');box.className='eq-pin-box';
+    const mark=document.createElement('div');mark.setAttribute('aria-hidden','true');
+    eq.before(box);box.append(mark,eq,tab);
+    const hint=box.nextElementSibling;
+    if(hint&&hint.matches('.eql-hint'))box.append(hint);
+    items.push({box,mark,eq,tab});
+  });
+  function measure(){
+    items.forEach(it=>{
+      const on=innerHeight>=560&&it.tab.offsetHeight>innerHeight*.6;
+      it.box.classList.toggle('on',on);
+      it.box.style.setProperty('--eq-h',Math.ceil(it.eq.offsetHeight*.84)+'px');
+    });
+    update();
+  }
+  function update(){
+    const clamp=x=>Math.max(0,Math.min(1,x));
+    items.forEach(it=>{
+      if(!it.box.classList.contains('on')){it.box.classList.remove('stuck');return;}
+      const passed=-it.mark.getBoundingClientRect().top;
+      const left=it.box.getBoundingClientRect().bottom-it.eq.offsetHeight;
+      const p=clamp(passed/80);
+      it.eq.style.setProperty('--p',p.toFixed(3));
+      it.eq.style.setProperty('--line-o',Math.min(p,clamp(left/50)).toFixed(3));
+      it.box.classList.toggle('stuck',passed>0&&left>0);
+    });
+  }
+  addEventListener('scroll',update,{passive:true});
+  addEventListener('resize',measure);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(measure);
+  addEventListener('load',measure);
+  measure();
 })();
 </script>
 <!--eqlink:end-->
