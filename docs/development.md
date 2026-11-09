@@ -48,6 +48,7 @@ SKILL.md 안의 파일 참조는 모두 **그 SKILL.md가 있는 폴더 기준 �
 | `hub [--dir 폴더]` | 출력 폴더의 학습자료·퀴즈를 모은 `index.html` 생성 |
 | `stats <html>` | 글자 수, 예상 읽기 시간, 예시·시각화·보충 수, 원자료 파일명 |
 | `mathscan <html>` | 아직 SVG로 안 바뀐 수식 후보(`<sub>/<sup>`, 유니코드 기호, monospace 식) |
+| `vizcheck <html>` | 그림 규칙 위반 후보(범례, `.viz` 안 줄글, 그림을 풀어 쓴 다음 문단, 긴 라벨, 라벨 없는 그림). `--strict`면 경고 시 종료 코드 1 |
 
 ## 공용 조각과 버전
 
@@ -56,7 +57,7 @@ SKILL.md 안의 파일 참조는 모두 **그 SKILL.md가 있는 폴더 기준 �
 | 조각 | 마커 | 하는 일 |
 |---|---|---|
 | `generator/toc.css` | `/* toc:start v2 … */` | 목차 번호, 본문 공통 스타일, 인쇄 CSS |
-| `viz/viz.css` | `/*ta-viz:start v1*/` | 도식 색·범례 |
+| `viz/viz.css` | `/*ta-viz:start v2*/` | 도식 색·라벨·지시선 |
 | `viz/v3d.css` | `/*ta-v3d:start v1*/` | 3D 시각화의 무대·단계 버튼·라벨(문서에 `class="v3d"`가 있을 때만) |
 | `math/math.css` | `/*ta-math:start v1*/` | 수식 블록, 항 색 짝짓기 표 |
 | `generator/jump.html` | `<!--jump:start v2-->` | 문서 안 링크 이동과 "읽던 곳으로" 되돌아가기 |

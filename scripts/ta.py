@@ -523,6 +523,76 @@ def ids_in(p, s, e):
 MATH_CHARS = "∑∏√≤≥≠≈∈∀∃∞∂∇∫±÷⇒αβγδεζηθικλμνξπρστυφχψωΓΔΘΛΞΠΣΦΨΩ"  # ·×→ 는 일반 글에도 흔해 뺀다
 
 
+VIZ_DESCRIBE = re.compile(r"(?:(?:빨간|빨강|파란|파랑|주황|초록|노란|노랑|회색|붉은)\s*(?:색|칸|점|선|곡선|막대|테두리|네모|영역|부분|상자)|왼쪽 그림|오른쪽 그림|위 그림|아래 그림)")
+
+
+def label_width(s):
+    """라벨 길이. 한글·전각은 1, 그 외(영문·숫자·공백)는 0.5로 센다."""
+    return sum(1 if ord(c) > 0x2E7F else 0.5 for c in s)
+
+
+def viz_check(p, max_label=22, max_prose=40):
+    """.viz 블록에서 '설명은 그림 안에' 규칙 위반 후보를 찾는다."""
+    hits = []
+
+    def inside(n, top):
+        a = n
+        while a is not None:
+            if a is top:
+                return True
+            a = a.parent
+        return False
+
+    def has_anc(n, top, pred):
+        a = n.parent
+        while a is not None and a is not top:
+            if pred(a):
+                return True
+            a = a.parent
+        return False
+
+    def next_element(n):
+        kids = [c for c in p.all if c.parent is n.parent and c.start >= n.end]
+        return min(kids, key=lambda c: c.start) if kids else None
+
+    for v in p.all:
+        if "viz" not in v.classes or v.end is None or v.tag != "div":
+            continue
+        vid = v.id or nearest_id(v)
+
+        def add(kind, snippet):
+            hits.append({"kind": kind, "viz": vid, "snippet": snippet[:120]})
+
+        members = [n for n in p.all if n is not v and n.end is not None and v.start <= n.start and n.end <= v.end and inside(n, v)]
+        is_3d = any("v3d" in n.classes for n in members)
+        for n in members:
+            if "viz-leg" in n.classes and not n.attrs.get("data-why"):
+                add("legend", visible_text(p, n, with_ids=False).strip())
+            if n.tag in ("ul", "ol"):
+                add("list-in-viz", visible_text(p, n, with_ids=False).strip())
+            if n.tag == "p" and not set(n.classes) & {"viz-leg", "src", "src-line"} and not has_anc(n, v, lambda a: a.tag == "svg" or "v3d-fb" in a.classes):
+                t = visible_text(p, n, with_ids=False).strip()
+                if len(t) > max_prose:
+                    add("prose-in-viz", t)
+        svgs = [n for n in members if n.tag == "svg" and not has_anc(n, v, lambda a: "v3d-fb" in a.classes)]
+        if not is_3d:
+            texts = [n for n in members if n.tag == "text" and has_anc(n, v, lambda a: a.tag == "svg")]
+            for n in texts:
+                t = visible_text(p, n, with_ids=False).strip()
+                if label_width(t) > max_label:
+                    add("long-label", t)
+            shapes = [n for n in members if n.tag in ("rect", "circle", "path", "polygon", "ellipse") and has_anc(n, v, lambda a: a.tag in ("svg",)) and not has_anc(n, v, lambda a: a.tag in ("defs", "marker"))]
+            if svgs and len(shapes) >= 8 and sum(1 for n in texts if visible_text(p, n, with_ids=False).strip()) <= 2:
+                add("few-labels", f"도형 {len(shapes)}개에 글자 {len(texts)}개")
+        nx = next_element(v)
+        if nx is not None and nx.tag in ("p", "ul", "ol"):
+            t = visible_text(p, nx, with_ids=False).strip()
+            m = VIZ_DESCRIBE.search(t)
+            if m:
+                add("describes-figure", t[max(0, m.start() - 20):m.end() + 60])
+    return hits
+
+
 def math_scan(p):
     """아직 MathJax SVG(class="m")로 바뀌지 않은 수식 후보: <sub>/<sup>, 유니코드 수식 문자, monospace 식 블록."""
     hits = []
@@ -1121,6 +1191,11 @@ def main(argv=None):
     a.add_argument("html")
     a.add_argument("--json", action="store_true")
 
+    a = sp.add_parser("vizcheck", help="그림 규칙 점검: 범례, 블록 안 줄글, 그림을 풀어 쓴 문단, 긴 라벨, 라벨 없는 그림")
+    a.add_argument("html")
+    a.add_argument("--json", action="store_true")
+    a.add_argument("--strict", action="store_true", help="경고가 있으면 종료 코드 1")
+
     args = ap.parse_args(argv)
 
     if args.cmd == "config":
@@ -1251,6 +1326,17 @@ def main(argv=None):
              f"{out} ({len(notes)}개)")
     elif args.cmd == "stats":
         emit(do_stats(args.html), True)
+    elif args.cmd == "vizcheck":
+        hits = viz_check(parse(read(args.html)))
+        if args.json:
+            emit(hits, True)
+        else:
+            if not hits:
+                print("그림 규칙 경고가 없습니다")
+            for i, h in enumerate(hits, 1):
+                print(f"[{i}] {h['kind']:<16} {h['viz']}  {h['snippet']}")
+        if args.strict and hits:
+            sys.exit(1)
     elif args.cmd == "mathscan":
         hits = math_scan(parse(read(args.html)))
         if args.json:
