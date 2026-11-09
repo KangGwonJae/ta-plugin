@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linear Regression 학습자료</title>
+<style>
+:root{--bg:#ffffff;--fg:#1d2330;--muted:#6b7280;--line:#e3e6ec;--card:#f6f7fb;--accent:#2f3e9e;--soft:#e7eafb}
+@media (prefers-color-scheme: dark){:root{--bg:#14161c;--fg:#e6e8ee;--muted:#9aa1ad;--line:#2c303a;--card:#1c1f27;--accent:#9fb0ff;--soft:#232a4a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;line-height:1.75;font-size:16px}
+main{max-width:760px;margin:0 auto;padding:28px 16px 80px}
+h2{font-size:1.4rem;margin:2.4em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+h3{font-size:1.15rem;margin:1.8em 0 .5em;color:var(--accent)}
+.ex{border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);border-radius:12px;padding:14px 16px;margin:16px 0;background:var(--card);scroll-margin-top:16px}
+.exh{font-weight:700;margin-bottom:8px}
+.lab{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.08em;color:var(--accent);background:var(--soft);border-radius:999px;padding:1px 9px;margin:8px 0 2px}
+.sup{color:var(--muted);font-size:.85em}
+blockquote{margin:.8em 0;padding:.5em 1em;border-left:4px solid var(--accent);background:var(--card);border-radius:0 6px 6px 0}
+</style>
+</head>
+<body><main>
+<h1>Linear Regression (선형 회귀)</h1>
+<p>원자료: lecture3_regression.pdf</p>
+<nav class="toc" aria-label="목차"><p class="toc-h">목차</p>
+<ol>
+  <li><a href="#s1">기본 용어</a></li>
+  <li><a href="#s2">개념 설명</a>
+    <ol><li><a href="#c1">모델과 예측</a></li><li><a href="#c2">Loss와 gradient descent</a></li></ol></li>
+  <li><a href="#s3">원자료 해설</a></li>
+  <li><a href="#s4">핵심 요약</a></li>
+</ol></nav>
+
+<details class="gloss" id="s1" open>
+<summary><h2 data-noidx>0. 기본 용어</h2><span class="gl-tog"></span></summary>
+<div class="gl-grid">
+  <div class="tcard" id="t-model"><div class="tc-top"><button class="tc-name" type="button">Model</button><span class="tc-ko">모델</span></div><p class="tc-def">입력 x를 받아 예측 y를 내는 계산식.</p><p class="tc-ex"><b>예</b>x = 3 → y = 7</p></div>
+  <div class="tcard" id="t-weight"><div class="tc-top"><button class="tc-name" type="button">weight</button><span class="tc-ko">가중치</span></div><p class="tc-def">입력에 곱하는 숫자. 직선의 기울기.</p><p class="tc-ex"><b>예</b>w = 2</p></div>
+  <div class="tcard" id="t-loss"><div class="tc-top"><button class="tc-name" type="button">Loss</button><span class="tc-ko">손실</span></div><p class="tc-def">예측이 정답에서 얼마나 틀렸는지 재는 숫자.</p><p class="tc-ex"><b>예</b>예측 7, 정답 8 → 틀린 양 1</p></div>
+</div></details>
+
+<h2 id="s2">1. 개념 설명</h2>
+<h3 id="c1">1.1 모델과 예측</h3>
+<p><a class="term" href="#t-model">Model</a>은 x에 <a class="term" href="#t-weight">weight</a> w를 곱하고 b를 더해 y를 예측한다. 식으로는 y = w·x + b다. <span class="src">p.1</span></p>
+<ul class="pts">
+  <li><b>w</b> 직선의 기울기. x가 1 커질 때 y가 얼마나 커지는지.</li>
+  <li><b>b</b> 직선이 세로축과 만나는 높이(intercept).</li>
+</ul>
+<div class="ex" id="ex1">
+<div class="exh">예시 ① w와 b가 정해지면 예측은 계산 한 줄이다</div>
+<span class="lab">이 예시로 알 수 있는 것</span>
+<p>Model은 숫자 두 개(w, b)로 정해진다.</p>
+<span class="lab">예시</span>
+<p>w = 2, b = 1, x = 3 → y = 2 × 3 + 1 = 7 <span class="src">p.1</span></p>
+<span class="lab">해설</span>
+<ul class="pts">
+  <li><b>곱하기</b> 2 × 3 = 6. 기울기가 2라 x 한 칸에 y가 2씩 오른다.</li>
+  <li><b>더하기</b> 6 + 1 = 7. b는 출발 높이다.</li>
+</ul>
+</div>
+
+<h3 id="c2">1.2 Loss와 gradient descent</h3>
+<p><a class="term" href="#t-loss">Loss</a>는 예측과 정답의 차이를 제곱해 평균 낸 값이다. MSE = (1/n) Σ<sub>i</sub> (y<sub>i</sub> − ŷ<sub>i</sub>)<sup>2</sup> <span class="src">p.1</span></p>
+<p>w는 w ← w − lr · ∂L/∂w 로 조금씩 고친다. lr이 너무 크면 발산하고 너무 작으면 느리다. <span class="src">p.2</span></p>
+
+<h2 id="s3" data-noidx>2. 원자료 해설</h2>
+<div id="orig-p2">
+<blockquote>We update w by w &lt;- w - lr * dL/dw.<span class="tr">w를 w − lr × dL/dw 로 갱신한다.</span></blockquote>
+<p><span class="src">lecture3_regression.pdf p.2</span></p>
+<ul class="pts"><li><b>lr</b> learning rate. 한 번에 얼마나 움직일지.</li><li><b>dL/dw</b> w를 늘리면 Loss가 얼마나 늘어나는지. 그 반대 방향으로 간다.</li></ul>
+</div>
+
+<h2 id="s4" data-noidx>3. 핵심 요약</h2>
+<ul class="pts">
+  <li><b>Model</b> y = w·x + b. 숫자 두 개가 전부다.</li>
+  <li><b>Loss</b> 틀린 양의 제곱 평균(MSE).</li>
+  <li><b>Gradient descent</b> Loss가 줄어드는 방향으로 w를 lr만큼씩 옮긴다.</li>
+</ul>
+</main>
+</body></html>

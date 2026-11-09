@@ -288,5 +288,46 @@ class MathScanTests(unittest.TestCase):
         self.assertTrue(all("rendered" not in h["kind"] for h in hits))
 
 
+class ReviewTests(unittest.TestCase):
+    GOOD = """<!DOCTYPE html><html><head><style>a{}</style></head><body><main>
+<h3 id="c1">1.1 A</h3><p>본문 <a href="#ref-1">[1]</a> <a href="#ex1">예시 ①</a></p>
+<div class="ex" id="ex1"><div class="exh">예시 ① 숫자</div></div>
+<ol id="refs"><li id="ref-1">논문</li></ol></main></body></html>"""
+
+    def kinds(self, raw):
+        return {h["kind"] for h in ta.review_check(ta.parse(raw)) if h["severity"] == "error"}
+
+    def test_clean(self):
+        self.assertEqual(self.kinds(self.GOOD), set())
+
+    def test_detects_errors(self):
+        bad = self.GOOD.replace('href="#ex1"', 'href="#nope"').replace("</main>", "<p>1.9절과 예시 ②, </p></main>")
+        bad = bad.replace('<a href="#ref-1">[1]</a>', "")
+        k = self.kinds(bad)
+        self.assertTrue({"broken-link", "missing-section", "missing-example", "unused-ref"} <= k, k)
+
+    def test_wrong_label(self):
+        self.assertIn("wrong-label", self.kinds(self.GOOD.replace('>예시 ①</a>', '>예시 ②</a>')))
+
+    def test_stamp_survives_fragments_not_edits(self):
+        with tempfile.TemporaryDirectory() as d:
+            f = os.path.join(d, "a.html")
+            Path(f).write_text(self.GOOD, encoding="utf-8")
+            ta.main(["reviewstamp", f, "--scope", "full", "--reviewer", "agent"])
+            self.assertEqual(ta.review_status(ta.read(f))["state"], "ok")
+            ta.main(["fragments", f])
+            self.assertEqual(ta.review_status(ta.read(f))["state"], "ok")
+            Path(f).write_text(ta.read(f).replace("본문", "수정"), encoding="utf-8")
+            self.assertEqual(ta.review_status(ta.read(f))["state"], "stale")
+
+    def test_stamp_refuses_errors(self):
+        with tempfile.TemporaryDirectory() as d:
+            f = os.path.join(d, "a.html")
+            Path(f).write_text(self.GOOD.replace('href="#ex1"', 'href="#x"'), encoding="utf-8")
+            with self.assertRaises(SystemExit):
+                ta.main(["reviewstamp", f, "--scope", "full", "--reviewer", "agent"])
+            self.assertEqual(ta.review_status(ta.read(f))["state"], "missing")
+
+
 if __name__ == "__main__":
     unittest.main()

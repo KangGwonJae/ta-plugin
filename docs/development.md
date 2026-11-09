@@ -23,6 +23,7 @@ skills/
   viz/         SKILL.md + viz.css, v3d.css, v3d.html(빌드 결과), 3d/(entry.js, runtime.js, build.mjs)
   math/        SKILL.md + tex2svg.js, math.css
   quiz/
+  review/      결과물 최종 점검. 다른 스킬이 열기 전에 반드시 부른다
 evals/<케이스>/                      claude plugin eval 케이스(prompt.md, graders/, fixtures/, scaffold.sh, case.yaml)
 docs/superpowers/specs/            설계 문서
 ```
@@ -48,6 +49,8 @@ SKILL.md 안의 파일 참조는 모두 **그 SKILL.md가 있는 폴더 기준 �
 | `hub [--dir 폴더]` | 출력 폴더의 학습자료·퀴즈를 모은 `index.html` 생성 |
 | `stats <html>` | 글자 수, 예상 읽기 시간, 예시·시각화·보충 수, 원자료 파일명 |
 | `mathscan <html>` | 아직 SVG로 안 바뀐 수식 후보(`<sub>/<sup>`, 유니코드 기호, monospace 식) |
+| `reviewcheck <html>` | 최종 점검의 기계 항목(링크, 절·예시·그림 번호, 참고문헌, 인용, 그림, 수식)과 도장 상태. `--strict`면 error나 무효 도장에 종료 코드 1 |
+| `reviewstamp <html> --scope full\|part --reviewer agent\|self` | 공용 조각을 뺀 내용의 해시로 점검 도장을 남긴다. error가 남으면 거부 |
 | `vizcheck <html>` | 그림 규칙 위반 후보(범례, `.viz` 안 줄글, 그림을 풀어 쓴 다음 문단, 긴 라벨, 라벨 없는 그림). `--strict`면 경고 시 종료 코드 1 |
 
 ## 공용 조각과 버전

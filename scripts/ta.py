@@ -17,6 +17,7 @@
   stats       글자 수·예상 읽기 시간·블록 수
 """
 import argparse
+import hashlib
 import base64
 import difflib
 import html as htmlmod
@@ -590,6 +591,118 @@ def viz_check(p, max_label=22, max_prose=40):
             m = VIZ_DESCRIBE.search(t)
             if m:
                 add("describes-figure", t[max(0, m.start() - 20):m.end() + 60])
+    return hits
+
+
+REVIEW_STAMP = re.compile(r"<!--ta-review v1 ([^>]*?)-->\s*")
+
+
+def review_hash(raw):
+    """공용 조각·CSS·도장을 뺀 내용의 해시. fragments를 다시 돌려도 바뀌지 않는다."""
+    t = REVIEW_STAMP.sub("", raw)
+    t = re.sub(r"<!--([\w-]+):start[^>]*-->.*?<!--\1:end-->", "", t, flags=re.S)
+    t = re.sub(r"<(style|script)\b.*?</\1>", "", t, flags=re.S | re.I)
+    t = re.sub(r"\s+", "", t)
+    return hashlib.sha256(t.encode("utf-8")).hexdigest()[:16]
+
+
+def review_status(raw):
+    m = REVIEW_STAMP.search(raw)
+    if not m:
+        return {"state": "missing"}
+    info = dict(re.findall(r"(\w+)=(\S+)", m.group(1)))
+    info["state"] = "ok" if info.get("hash") == review_hash(raw) else "stale"
+    return info
+
+
+def _norm_quote(s):
+    return re.sub(r"[\W_]+", "", unicodedata.normalize("NFKC", s)).lower()
+
+
+def _sources_dir(path):
+    path = Path(path)
+    stem = re.sub(r"(_학습자료|_notes|_퀴즈|_quiz)(_\d+)?$", "", path.stem)
+    return path.parent / ".sources" / stem
+
+
+def review_check(p, path=None, sources=None):
+    """링크·번호·참고문헌·인용·그림·수식의 기계 점검. severity는 error|warn."""
+    hits = []
+
+    def add(sev, kind, where, snippet):
+        hits.append({"severity": sev, "kind": kind, "where": where, "snippet": str(snippet)[:140]})
+
+    ids = {n.id: n for n in p.all if n.id}
+    text_of = lambda n: visible_text(p, n, with_ids=False).strip()
+    links = [n for n in p.all if n.tag == "a" and n.end is not None and n.attrs.get("href", "").startswith("#")]
+    cited = set()
+    for a in links:
+        tid = a.attrs["href"][1:]
+        if not tid:
+            continue
+        if tid not in ids:
+            add("error", "broken-link", nearest_id(a) or "", "#" + tid)
+            continue
+        if tid.startswith("ref-"):
+            cited.add(tid)
+        label = re.match(r"\s*(예시|시각화)\s*([\u2460-\u2473])", text_of(a))
+        target = ids[tid]
+        heads = [n for n in p.all if n.end is not None and target.start < n.start and n.end <= target.end and ("exh" in n.classes or n.tag == "h4")]
+        if label and heads and label.group(2) not in text_of(heads[0]):
+            add("error", "wrong-label", nearest_id(a) or "", f"{text_of(a)} → #{tid}")
+    for tid in ids:
+        if re.fullmatch(r"ref-\d+", tid) and tid not in cited:
+            add("error", "unused-ref", tid, text_of(ids[tid]))
+
+    exs = {m for n in p.all if "exh" in n.classes and n.end is not None for m in re.findall(r"[\u2460-\u2473]", text_of(n)[:12])}
+    vizs = {m for n in p.all if n.tag == "h4" and n.end is not None for m in re.findall(r"시각화\s*([\u2460-\u2473])", text_of(n))}
+    secs = {m.group(1) for n in p.all if n.tag == "h3" and n.end is not None for m in [re.match(r"(?:<\w+>)?\s*(\d+\.\d+)", text_of(n))] if m}
+    body = visible_text(p, with_ids=False)
+    if exs:
+        for m in sorted(set(re.findall(r"예시\s*([\u2460-\u2473])", body)) - exs):
+            add("error", "missing-example", "", "예시 " + m)
+    if vizs:
+        for m in sorted(set(re.findall(r"시각화\s*([\u2460-\u2473])", body)) - vizs):
+            add("error", "missing-figure", "", "시각화 " + m)
+    if secs:
+        pat = r"(?<![\d.])(\d{1,2}\.\d{1,2})(?=\s*(?:절|에서 다시|에서 본|에서 설명|을 참고|를 참고|참고))"
+        def in_orig(n):
+            while n is not None:
+                if "orig" in n.classes:
+                    return True
+                n = n.parent
+            return False
+
+        majors = {x.split(".")[0] for x in secs}
+        own = {m for n in p.all if n.tag in ("p", "li", "td") and n.end is not None and not in_orig(n) for m in re.findall(pat, text_of(n))}
+        for m in sorted(x for x in own - secs if x.split(".")[0] in majors):
+            add("error", "missing-section", "", m + "절")
+
+    sdir = Path(sources) if sources else (_sources_dir(path) if path else None)
+    if sdir and sdir.is_dir():
+        for tid, n in ids.items():
+            m = re.fullmatch(r"orig-r(\d+)", tid)
+            if not m:
+                continue
+            files = [f for f in sdir.iterdir() if f.name.startswith(f"[{m.group(1)}]_") and f.suffix in (".txt", ".md")]
+            quotes = [q for q in p.all if q.tag == "blockquote" and q.end is not None and n.start <= q.start and q.end <= n.end]
+            if not files:
+                continue
+            src = _norm_quote(files[0].read_text(encoding="utf-8", errors="ignore"))
+            for q in quotes:
+                inner = re.sub(r'<span class="tr">.*?</span>', "", p.raw[q.start:q.end], flags=re.S)
+                plain = htmlmod.unescape(re.sub(r"<[^>]+>", " ", inner))
+                if _norm_quote(plain) in src:
+                    continue
+                words = [_norm_quote(w) for w in plain.split() if len(_norm_quote(w)) > 3]
+                found = sum(1 for w in words if w in src) / max(len(words), 1)
+                add("warn", "quote-layout" if found >= 0.9 else "quote-not-found", tid, plain.strip())
+
+    for h in viz_check(p):
+        add("warn", "viz-" + h["kind"], h["viz"], h["snippet"])
+    mc = [h for h in math_scan(p) if h["kind"] in ("subsup", "mono")]
+    if mc:
+        add("warn", "math-candidates", "", f"SVG로 안 바뀐 수식 후보 {len(mc)}개 (mathscan으로 확인)")
     return hits
 
 
@@ -1196,6 +1309,19 @@ def main(argv=None):
     a.add_argument("--json", action="store_true")
     a.add_argument("--strict", action="store_true", help="경고가 있으면 종료 코드 1")
 
+    a = sp.add_parser("reviewcheck", help="최종 점검의 기계 항목: 링크, 번호, 참고문헌, 인용, 그림, 수식, 점검 도장")
+    a.add_argument("html")
+    a.add_argument("--sources", help=".sources/<주제> 폴더 (기본: 파일명으로 추정)")
+    a.add_argument("--json", action="store_true")
+    a.add_argument("--strict", action="store_true", help="error가 있거나 도장이 유효하지 않으면 종료 코드 1")
+
+    a = sp.add_parser("reviewstamp", help="최종 점검을 마친 문서에 내용 해시 도장을 남긴다")
+    a.add_argument("html")
+    a.add_argument("--scope", choices=["full", "part"], required=True)
+    a.add_argument("--reviewer", choices=["agent", "self"], required=True)
+    a.add_argument("--sources", help=".sources/<주제> 폴더 (기본: 파일명으로 추정)")
+    a.add_argument("--force", action="store_true", help="error가 있어도 도장을 찍는다")
+
     args = ap.parse_args(argv)
 
     if args.cmd == "config":
@@ -1325,7 +1451,33 @@ def main(argv=None):
         emit({"index": str(out), "count": len(notes), "files": [n["file"] for n in notes]}, args.json,
              f"{out} ({len(notes)}개)")
     elif args.cmd == "stats":
-        emit(do_stats(args.html), True)
+        emit({**do_stats(args.html), "review": review_status(read(args.html))["state"]}, True)
+    elif args.cmd == "reviewcheck":
+        raw = read(args.html)
+        hits = review_check(parse(raw), args.html, args.sources)
+        status = review_status(raw)
+        if args.json:
+            emit({"hits": hits, "stamp": status}, True)
+        else:
+            for i, h in enumerate(hits, 1):
+                print(f"[{i}] {h['severity']:<5} {h['kind']:<20} {h['where']}  {h['snippet']}")
+            errs = sum(1 for h in hits if h["severity"] == "error")
+            print(f"error {errs}개, warn {len(hits) - errs}개, 도장 {status['state']}")
+        if args.strict and (any(h["severity"] == "error" for h in hits) or status["state"] != "ok"):
+            sys.exit(1)
+    elif args.cmd == "reviewstamp":
+        raw = read(args.html)
+        errs = [h for h in review_check(parse(raw), args.html, args.sources) if h["severity"] == "error"]
+        if errs and not args.force:
+            for h in errs:
+                print(f"error {h['kind']} {h['where']} {h['snippet']}")
+            sys.exit(f"error {len(errs)}개가 남아 도장을 찍지 않았습니다")
+        body = REVIEW_STAMP.sub("", raw)
+        stamp = f"<!--ta-review v1 hash={review_hash(body)} scope={args.scope} reviewer={args.reviewer} date={datetime.now().date().isoformat()}-->\n"
+        i = body.lower().rfind("</body>")
+        body = (body[:i] + stamp + body[i:]) if i >= 0 else body + stamp
+        write(args.html, body)
+        print("도장: " + stamp.strip())
     elif args.cmd == "vizcheck":
         hits = viz_check(parse(read(args.html)))
         if args.json:
