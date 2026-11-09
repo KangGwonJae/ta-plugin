@@ -60,7 +60,7 @@ SKILL.md 안의 파일 참조는 모두 **그 SKILL.md가 있는 폴더 기준 �
 | 조각 | 마커 | 하는 일 |
 |---|---|---|
 | `generator/toc.css` | `/* toc:start v2 … */` | 목차 번호, 본문 공통 스타일, 인쇄 CSS |
-| `viz/viz.css` | `/*ta-viz:start v2*/` | 도식 색·라벨·지시선 |
+| `viz/viz.css` | `/*ta-viz:start v3*/` | 도식 색·라벨·지시선 |
 | `viz/v3d.css` | `/*ta-v3d:start v1*/` | 3D 시각화의 무대·단계 버튼·라벨(문서에 `class="v3d"`가 있을 때만) |
 | `math/math.css` | `/*ta-math:start v1*/` | 수식 블록, 항 색 짝짓기 표 |
 | `generator/jump.html` | `<!--jump:start v2-->` | 문서 안 링크 이동과 "읽던 곳으로" 되돌아가기 |
